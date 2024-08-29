@@ -321,12 +321,12 @@ void __stdcall GetAPECompressionLevelName(int nCompressionLevel, APE::str_utfn *
 }
 
 /**************************************************************************************************
-Simple progress callback (for legacy support)
+Simple progress callback
 **************************************************************************************************/
-class CAPEProgressCallbackLegacy : public IAPEProgressCallback
+class CAPEProgressCallbackSimple : public IAPEProgressCallback
 {
 public:
-    CAPEProgressCallbackLegacy(int * pProgress, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag)
+    CAPEProgressCallbackSimple(int * pProgress, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag)
     {
         m_pProgress = pProgress;
         m_ProgressCallback = ProgressCallback;
@@ -401,28 +401,28 @@ Legacy callback wrappers
 #ifdef APE_SUPPORT_COMPRESS
 int __stdcall CompressFileW(const APE::str_utfn * pInputFilename, const APE::str_utfn * pOutputFilename, int nCompressionLevel, int * pPercentageDone, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag)
 {
-    CAPEProgressCallbackLegacy ProgressCallbackLegacy(pPercentageDone, ProgressCallback, pKillFlag);
-    return CompressFileW2(pInputFilename, pOutputFilename, nCompressionLevel, &ProgressCallbackLegacy);
+    CAPEProgressCallbackSimple ProgressCallbackSimple(pPercentageDone, ProgressCallback, pKillFlag);
+    return CompressFileW2(pInputFilename, pOutputFilename, nCompressionLevel, &ProgressCallbackSimple);
 }
 #endif
 
 int __stdcall VerifyFileW(const APE::str_utfn * pInputFilename, int * pPercentageDone, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag, bool bQuickVerifyIfPossible)
 {
-    CAPEProgressCallbackLegacy ProgressCallbackLegacy(pPercentageDone, ProgressCallback, pKillFlag);
-    return VerifyFileW2(pInputFilename, &ProgressCallbackLegacy, bQuickVerifyIfPossible);
+    CAPEProgressCallbackSimple ProgressCallbackSimple(pPercentageDone, ProgressCallback, pKillFlag);
+    return VerifyFileW2(pInputFilename, &ProgressCallbackSimple, bQuickVerifyIfPossible);
 }
 
 int __stdcall DecompressFileW(const APE::str_utfn * pInputFilename, const APE::str_utfn * pOutputFilename, int * pPercentageDone, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag)
 {
-    CAPEProgressCallbackLegacy ProgressCallbackLegacy(pPercentageDone, ProgressCallback, pKillFlag);
-    const int nResult = DecompressFileW2(pInputFilename, pOutputFilename, &ProgressCallbackLegacy);
+    CAPEProgressCallbackSimple ProgressCallbackSimple(pPercentageDone, ProgressCallback, pKillFlag);
+    const int nResult = DecompressFileW2(pInputFilename, pOutputFilename, &ProgressCallbackSimple);
     return nResult;
 }
 
 int __stdcall ConvertFileW(const APE::str_utfn * pInputFilename, const APE::str_utfn * pOutputFilename, int nCompressionLevel, int * pPercentageDone, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag)
 {
-    CAPEProgressCallbackLegacy ProgressCallbackLegacy(pPercentageDone, ProgressCallback, pKillFlag);
-    return ConvertFileW2(pInputFilename, pOutputFilename, nCompressionLevel, &ProgressCallbackLegacy);
+    CAPEProgressCallbackSimple ProgressCallbackSimple(pPercentageDone, ProgressCallback, pKillFlag);
+    return ConvertFileW2(pInputFilename, pOutputFilename, nCompressionLevel, &ProgressCallbackSimple);
 }
 
 /**************************************************************************************************

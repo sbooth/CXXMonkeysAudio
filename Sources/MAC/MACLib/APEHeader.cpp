@@ -384,6 +384,7 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
     Convert32BitSeekTable(pInfo, spSeekByteTable32, pInfo->nSeekTableElements);
 
     // seek bit table (for older files)
+#ifdef APE_BACKWARDS_COMPATIBILITY
     if (APEHeader.nVersion <= 3800)
     {
         pInfo->spSeekBitTable.Assign(new unsigned char [static_cast<size_t>(pInfo->nSeekTableElements)], true);
@@ -392,6 +393,7 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
         if (m_pIO->Read(pInfo->spSeekBitTable.GetPtr(), static_cast<unsigned int>(pInfo->nSeekTableElements), &nBytesRead) || nBytesRead != static_cast<unsigned int>(pInfo->nSeekTableElements))
             return ERROR_IO_READ;
     }
+#endif
 
     return ERROR_SUCCESS;
 }
