@@ -107,13 +107,7 @@ int CAPEDecompress::InitializeDecompressor()
             m_aryPredictor[nChannel] = new CPredictorDecompressNormal3930to3950(nCompressionLevel, nVersion);
     }
 
-    // start with interim mode off
-    m_bInterimMode = false;
-    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
-    {
-        if (m_aryPredictor[z] != APE_NULL)
-            m_aryPredictor[z]->SetInterimMode(false);
-    }
+    // we're starting with interim mode off and there should be no need to call and set that it's off since that's how the objects are built
 
     // seek to the beginning
     return Seek(0);

@@ -158,9 +158,11 @@ int CAPEInfo::CloseFile()
 {
     m_spIO.Delete();
     m_APEFileInfo.spWaveHeaderData.Delete();
-    m_APEFileInfo.spSeekBitTable.Delete();
     m_APEFileInfo.spSeekByteTable64.Delete();
     m_APEFileInfo.spAPEDescriptor.Delete();
+#ifdef APE_BACKWARDS_COMPATIBILITY
+    m_APEFileInfo.spSeekBitTable.Delete();
+#endif
 
     m_spAPETag.Delete();
 
@@ -335,7 +337,11 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
             if ((nFrame < 0) || (static_cast<uint32>(nFrame) >= m_APEFileInfo.nTotalFrames))
                 nResult = 0;
             else
+#ifdef APE_BACKWARDS_COMPATIBILITY
                 nResult = m_APEFileInfo.spSeekBitTable[nFrame];
+#else
+                nResult = 0;
+#endif
         }
         break;
     }
