@@ -1,9 +1,9 @@
 /**************************************************************************************************
 APEInfo.h
 
-Simple method for working with APE files.  It encapsulates reading, writing and getting
-file information.  Just create a CAPEInfo class, call OpenFile(), and use the class methods
-to do whatever you need.  The destructor will take care of any cleanup.
+Simple method for working with APE files. It encapsulates reading, writing and getting
+file information. Just create a CAPEInfo class, call OpenFile(), and use the class methods
+to do whatever you need. The destructor will take care of any cleanup.
 **************************************************************************************************/
 
 #pragma once

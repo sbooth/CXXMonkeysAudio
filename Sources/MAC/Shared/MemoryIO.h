@@ -1,5 +1,3 @@
-#ifdef IO_USE_WIN_FILE_IO
-
 #pragma once
 
 #include "IO.h"
@@ -7,14 +5,12 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
-class CWinFileIO : public CIO
+class CMemoryIO : public CIO
 {
 public:
     // construction / destruction
-    CWinFileIO();
-    ~CWinFileIO();
+    CMemoryIO(unsigned char * pBuffer, int nBufferBytes);
+    ~CMemoryIO();
 
     // open / close
     int Open(const wchar_t * pName, bool bOpenReadOnly = false) APE_OVERRIDE;
@@ -29,7 +25,7 @@ public:
 
     // other functions
     int SetEOF() APE_OVERRIDE;
-    unsigned char * GetBuffer(int *)  APE_OVERRIDE { return APE_NULL; }
+    unsigned char * GetBuffer(int * pnBufferBytes) APE_OVERRIDE;
 
     // creation / destruction
     int Create(const wchar_t * pName) APE_OVERRIDE;
@@ -41,15 +37,10 @@ public:
     int GetName(wchar_t * pBuffer) APE_OVERRIDE;
 
 private:
-    CSmartPtr<unsigned char> m_spBuffer;
-    HANDLE      m_hFile;
-    wchar_t     m_cFileName[APE_MAX_PATH];
-    bool        m_bReadOnly;
-    bool        m_bPipe;
+    unsigned char * m_pBuffer;
+    int m_nBufferBytes;
+
+    int m_nPosition;
 };
 
-#pragma pack(pop)
-
 }
-
-#endif //IO_USE_WIN_FILE_IO
