@@ -74,7 +74,7 @@ Global includes
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <wchar.h>
-    #include "NoWindows.h"
+    #include <MAC/NoWindows.h>
 #endif
 #define ape_max(a, b) (((a) > (b)) ? (a) : (b))
 #define ape_min(a, b) (((a) < (b)) ? (a) : (b))
@@ -84,12 +84,12 @@ Global includes
 /**************************************************************************************************
 Smart pointer
 **************************************************************************************************/
-#include "SmartPtr.h"
+#include <MAC/SmartPtr.h>
 
 /**************************************************************************************************
 Version
 **************************************************************************************************/
-#include "Version.h"
+#include <MAC/Version.h>
 
 // year in the copyright strings
 #define APE_YEAR 2025
