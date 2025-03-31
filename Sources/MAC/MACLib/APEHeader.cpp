@@ -188,7 +188,7 @@ int CAPEHeader::AnalyzeCurrent(APE_FILE_INFO * pInfo)
 
     if ((pInfo->spAPEDescriptor->nDescriptorBytes - nBytesRead) > 0)
     {
-        m_pIO->Seek(pInfo->spAPEDescriptor->nDescriptorBytes - nBytesRead, SeekFileCurrent);
+        m_pIO->Seek(static_cast<int64>(pInfo->spAPEDescriptor->nDescriptorBytes) - static_cast<int64>(nBytesRead), SeekFileCurrent);
     }
 
     // read the header
@@ -197,7 +197,7 @@ int CAPEHeader::AnalyzeCurrent(APE_FILE_INFO * pInfo)
 
     if ((pInfo->spAPEDescriptor->nHeaderBytes - nBytesRead) > 0)
     {
-        m_pIO->Seek(pInfo->spAPEDescriptor->nHeaderBytes - nBytesRead, SeekFileCurrent);
+        m_pIO->Seek(static_cast<int64>(pInfo->spAPEDescriptor->nHeaderBytes) - static_cast<int64>(nBytesRead), SeekFileCurrent);
     }
 
     // fill the APE info structure
