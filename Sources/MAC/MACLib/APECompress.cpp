@@ -31,7 +31,7 @@ CAPECompress::~CAPECompress()
 
 int CAPECompress::SetNumberOfThreads(int nThreads)
 {
-    m_nThreads = ape_cap(nThreads, 1, 32);
+    m_nThreads = APE_CAP(nThreads, 1, 32);
     return m_nThreads;
 }
 
@@ -45,10 +45,9 @@ int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pw
     HandleFloat(bFloat, pwfeInput);
 
     // create
-    if (m_spioOutput->Create(pOutputFilename) != 0)
-    {
-        return ERROR_INVALID_OUTPUT_FILE;
-    }
+    int nFileCreateResult = m_spioOutput->Create(pOutputFilename);
+    if (nFileCreateResult != 0)
+        return nFileCreateResult;
 
     // start
     const int nStartResult = m_spAPECompressCreate->Start(m_spioOutput, m_nThreads, pwfeInput, nMaxAudioBytes, nCompressionLevel,
@@ -146,7 +145,7 @@ int64 CAPECompress::AddData(unsigned char * pData, int64 nBytes)
         }
 
         // calculate how many bytes to copy and add that much to the buffer
-        const int64 nBytesToProcess = ape_min(nBytesAvailable, nBytes - nBytesDone);
+        const int64 nBytesToProcess = APE_MIN(nBytesAvailable, nBytes - nBytesDone);
         memcpy(pBuffer, &pData[nBytesDone], static_cast<size_t>(nBytesToProcess));
 
         // unlock the buffer (fail if not successful)
@@ -178,7 +177,7 @@ int CAPECompress::ProcessBuffer(bool bFinalize)
 
         while ((m_nBufferTail - m_nBufferHead) >= nThreshold)
         {
-            int64 nFrameBytes = ape_min(m_spAPECompressCreate->GetFullFrameBytes(), m_nBufferTail - m_nBufferHead);
+            int64 nFrameBytes = APE_MIN(m_spAPECompressCreate->GetFullFrameBytes(), m_nBufferTail - m_nBufferHead);
 
             // truncate to the size of a floating point number in float mode (since CFloatTransform::Process can only work on full samples)
             if (m_bFloat)

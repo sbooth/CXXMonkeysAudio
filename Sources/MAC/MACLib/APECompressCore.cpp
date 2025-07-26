@@ -1,10 +1,8 @@
 #include "All.h"
-#define APE_ENABLE_BIT_ARRAY_INLINES
 #include "APECompressCore.h"
 #include "BitArray.h"
 #include "Prepare.h"
 #include "NewPredictor.h"
-#include "MemoryIO.h"
 
 #ifdef APE_SUPPORT_COMPRESS
 
@@ -21,10 +19,8 @@ CAPECompressCore::CAPECompressCore(const WAVEFORMATEX * pwfeInput, int nMaxFrame
     m_nMaxFrameBlocks = nMaxFrameBlocks;
     int nDataSize = m_nMaxFrameBlocks * pwfeInput->nChannels * (pwfeInput->wBitsPerSample / 8);
     m_spInputData.Assign(new unsigned char [static_cast<size_t>(nDataSize)], true);
-    m_spOutputData.Assign(new unsigned char [static_cast<size_t>(nDataSize) + 4096], true);
-    m_spIO.Assign(new CMemoryIO(m_spOutputData, nDataSize + 4096));
-    m_spBitArray.Assign(new CBitArray(m_spIO));
-    const intn nChannels = ape_max(pwfeInput->nChannels, 2);
+    m_spBitArray.Assign(new CBitArray(static_cast<uint32>(nDataSize / 4 * 3)));
+    const intn nChannels = APE_MAX(pwfeInput->nChannels, 2);
     m_spData.Assign(new int [static_cast<size_t>(m_nMaxFrameBlocks * nChannels)], true);
     m_spPrepare.Assign(new CPrepare);
     APE_CLEAR(m_aryPredictors);
@@ -37,7 +33,6 @@ CAPECompressCore::CAPECompressCore(const WAVEFORMATEX * pwfeInput, int nMaxFrame
     }
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));
     m_nInputBytes = 0;
-    m_nFrameBytes = 0;
     m_bExit = false;
 }
 
@@ -55,7 +50,7 @@ CAPECompressCore::~CAPECompressCore()
     }
 }
 
-int CAPECompressCore::Run()
+void CAPECompressCore::Run()
 {
     while (!m_bExit)
     {
@@ -67,8 +62,6 @@ int CAPECompressCore::Run()
 
         m_semReady.Post();
     }
-
-    return 0;
 }
 
 int CAPECompressCore::EncodeFrame(const void * pInputData, int nInputBytes)
@@ -85,14 +78,12 @@ int CAPECompressCore::EncodeFrame(const void * pInputData, int nInputBytes)
 
 int CAPECompressCore::Encode(const void * pInputData, int nInputBytes)
 {
-    m_spIO->Seek(0, SeekFileBegin);
-
     // variables
     const int nInputBlocks = nInputBytes / m_wfeInput.nBlockAlign;
     int nSpecialCodes = 0;
 
-    // always start a new frame on a byte boundary
-    m_spBitArray->AdvanceToByteBoundary();
+    // start with an initial bit array
+    m_spBitArray->ResetBitArray();
 
     // do the preparation stage
     RETURN_ON_ERROR(Prepare(pInputData, nInputBytes, &nSpecialCodes))
@@ -174,22 +165,18 @@ int CAPECompressCore::Encode(const void * pInputData, int nInputBytes)
     m_spBitArray->Finalize();
     m_spBitArray->AdvanceToByteBoundary();
 
-    m_nFrameBytes = static_cast<uint32>(m_spIO->GetPosition() + m_spBitArray->GetCurrentBitIndex() / 8);
-
-    m_spBitArray->OutputBitArray(true);
-
     // return success
     return ERROR_SUCCESS;
 }
 
 unsigned char * CAPECompressCore::GetFrameBuffer()
 {
-    return m_spOutputData;
+    return m_spBitArray->GetBitArray();
 }
 
 uint32 CAPECompressCore::GetFrameBytes() const
 {
-    return m_nFrameBytes;
+    return m_spBitArray->GetBitArrayBytes();
 }
 
 int CAPECompressCore::Prepare(const void * pInputData, int nInputBytes, int * pSpecialCodes)

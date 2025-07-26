@@ -456,9 +456,18 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
         else
         {
             if (static_cast<uint32>(nFrame) != (m_APEFileInfo.nTotalFrames - 1))
+            {
                 nResult = GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame + 1) - GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame);
+            }
             else
-                nResult = static_cast<int64>(m_spIO->GetSize() - static_cast<int64>(m_spAPETag->GetTagBytes()) - static_cast<int64>(m_APEFileInfo.nWAVTerminatingBytes) - static_cast<int64>(GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame)));
+            {
+                // APL files have a tag on the APL but not the original file
+                nResult = static_cast<int64>(m_spIO->GetSize() - static_cast<int64>(m_APEFileInfo.nWAVTerminatingBytes) - static_cast<int64>(GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame)));
+
+                // remove the tag (but not for APL files because they have a tag on the APL but not the original data file)
+                if (m_spAPETag->GetIOMatches(m_spIO))
+                    nResult -= static_cast<int64>(m_spAPETag->GetTagBytes());
+            }
         }
         break;
     }

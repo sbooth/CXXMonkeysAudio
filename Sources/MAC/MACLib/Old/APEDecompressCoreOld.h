@@ -3,8 +3,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CAPEDecompressCoreOld
 {
 public:
@@ -14,12 +12,9 @@ public:
     void GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex);
     void GenerateDecodedArray(int * pInputArray, int nNumberElements, intn nFrameIndex, CAntiPredictor * pAntiPredictor);
 
-    int * GetDataX();
-    int * GetDataY();
-
-#ifdef APE_DECOMPRESS_CORE_GET_UNBITARRAY
-    __forceinline CUnBitArrayBase * GetUnBitArrray() { return m_spUnBitArray; }
-#endif
+    __forceinline int * GetDataX() const { return m_spDataX; }
+    __forceinline int * GetDataY() const { return m_spDataY; }
+    __forceinline CUnBitArrayBase * GetUnBitArrray() const { return m_spUnBitArray; }
 
     CSmartPtr<int> m_spTempData;
     CSmartPtr<int> m_spDataX;
@@ -36,7 +31,5 @@ public:
 
     int m_nBlocksProcessed;
 };
-
-#pragma pack(pop)
 
 }

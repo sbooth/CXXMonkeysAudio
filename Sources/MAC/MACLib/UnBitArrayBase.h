@@ -6,8 +6,6 @@ namespace APE
 class IAPEDecompress;
 class CIO;
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 Defines
 **************************************************************************************************/
@@ -77,18 +75,16 @@ protected:
     virtual uint32 DecodeValueXBits(uint32 nBits);
 
     // helpers (inline)
-    #ifdef APE_ADD_DECODE_BYTE // only include if this define is set or else Clang will warn when UnBitArrayBase.h is included in places this isn't called
-        inline uint32 DecodeByte()
-        {
-            if ((m_nCurrentBitIndex + 8) >= (m_nGoodBytes * 8))
-                EnsureBitsAvailable(8, true);
+    inline uint32 DecodeByte()
+    {
+        if ((m_nCurrentBitIndex + 8) >= (m_nGoodBytes * 8))
+            EnsureBitsAvailable(8, true);
 
-            // read byte
-            const uint32 nByte = ((m_spBitArray[m_nCurrentBitIndex >> 5] >> (24 - (m_nCurrentBitIndex & 31))) & 0xFF);
-            m_nCurrentBitIndex += 8;
-            return nByte;
-        }
-    #endif
+        // read byte
+        const uint32 nByte = ((m_spBitArray[m_nCurrentBitIndex >> 5] >> (24 - (m_nCurrentBitIndex & 31))) & 0xFF);
+        m_nCurrentBitIndex += 8;
+        return nByte;
+    }
 
     // data
     uint32 m_nElements;
@@ -112,9 +108,8 @@ class RangeOverflowTable
 public:
     RangeOverflowTable(const uint32* RANGE_TOTAL);
     ~RangeOverflowTable();
-#ifdef APE_ADD_GET_TO_RANGE_OVERFLOW_TABLE // only include if this define is set or else Clang will warn when UnBitArray.h is included in places this isn't called
+
     __forceinline uint8 Get(uint32 nIndex) const { return m_aryTable[nIndex]; }
-#endif
 
 private:
     uint8 m_aryTable[65536];
@@ -135,7 +130,5 @@ struct RANGE_CODER_STRUCT_DECOMPRESS
 CreateUnBitArray
 **************************************************************************************************/
 CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, CIO * pIO, intn nVersion);
-
-#pragma pack(pop)
 
 }

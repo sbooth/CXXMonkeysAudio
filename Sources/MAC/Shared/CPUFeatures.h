@@ -13,6 +13,10 @@ bool GetAVX512Available();
 
 bool GetNeonAvailable();
 
+bool GetRVVAvailable();
+
+bool GetAltiVecAvailable();
+
 /**************************************************************************************************
 Test for supported CPU features
 **************************************************************************************************/
@@ -22,5 +26,9 @@ bool GetAVX2Supported();
 bool GetAVX512Supported();
 
 bool GetNeonSupported();
+
+bool GetRVVSupported();
+
+bool GetAltiVecSupported();
 
 }

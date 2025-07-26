@@ -39,7 +39,7 @@ int CBufferIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pB
 
     if (m_bReadToBuffer && (m_spBuffer != APE_NULL) && (*pBytesRead > 0))
     {
-        const int nBufferBytes = ape_min(m_nBufferTotalBytes - m_nBufferBytes, *reinterpret_cast<int *>(pBytesRead));
+        const int nBufferBytes = APE_MIN(m_nBufferTotalBytes - m_nBufferBytes, *reinterpret_cast<int *>(pBytesRead));
         if (nBufferBytes <= 0)
         {
             m_bReadToBuffer = false;
@@ -141,7 +141,7 @@ bool CHeaderIO::ReadHeader(BYTE * paryHeader)
     int64 nFileSize = GetSize();
     if (nFileSize == APE_FILE_SIZE_UNDEFINED)
         nFileSize = 1000; // just pick some value bigger than our cap
-    nFileSize = ape_min(64, nFileSize);
+    nFileSize = APE_MIN(64, nFileSize);
     m_nHeaderBytes = nFileSize;
     if (ReadSafe(m_spSource, m_aryHeader, static_cast<int>(m_nHeaderBytes)) != ERROR_SUCCESS)
         return false;
@@ -167,7 +167,7 @@ int CHeaderIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pB
     int nResult = ERROR_SUCCESS;
     if (m_nPosition < m_nHeaderBytes)
     {
-        int64 nBytesFromBuffer = ape_min(m_nHeaderBytes - m_nPosition, nBytesToRead);
+        int64 nBytesFromBuffer = APE_MIN(m_nHeaderBytes - m_nPosition, nBytesToRead);
         memcpy(pBuffer, &m_aryHeader[m_nPosition], static_cast<size_t>(nBytesFromBuffer));
         char * pBufferChar = reinterpret_cast<char *>(pBuffer);
         unsigned int nBytesFromReader = static_cast<unsigned int>(static_cast<int64>(nBytesToRead) - nBytesFromBuffer);
@@ -238,12 +238,12 @@ int64 CHeaderIO::GetSize()
     return m_spSource->GetSize();
 }
 
-int CHeaderIO::GetName(wchar_t* pBuffer)
+int CHeaderIO::GetName(wchar_t * pBuffer)
 {
     return m_spSource->GetName(pBuffer);
 }
 
-int CHeaderIO::Create(const wchar_t* pName)
+int CHeaderIO::Create(const wchar_t * pName)
 {
     return m_spSource->Create(pName);
 }

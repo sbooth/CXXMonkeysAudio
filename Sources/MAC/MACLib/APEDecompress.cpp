@@ -1,9 +1,9 @@
 #include "All.h"
-#define APE_ENABLE_CIRCLE_BUFFER_WRITE
 #include "APEDecompress.h"
 #include "APEDecompressCore.h"
 #include "APEInfo.h"
 #include "FloatTransform.h"
+#include "GlobalFunctions.h"
 
 namespace APE
 {
@@ -31,8 +31,8 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
     m_nCurrentBlock = 0;
 
     // set the "real" start and finish blocks
-    m_nStartBlock = (nStartBlock < 0) ? 0 : ape_min(nStartBlock, m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS));
-    m_nFinishBlock = (nFinishBlock < 0) ? m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS) : ape_min(nFinishBlock, m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS));
+    m_nStartBlock = (nStartBlock < 0) ? 0 : APE_MIN(nStartBlock, m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS));
+    m_nFinishBlock = (nFinishBlock < 0) ? m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS) : APE_MIN(nFinishBlock, m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS));
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS));
 
     // version check (this implementation only works with 3.93 and later files)
@@ -47,9 +47,20 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
     m_cbFrameBuffer.CreateBuffer(static_cast<uint32>(m_spAPEInfo->GetInfo(APE_INFO_BLOCKS_PER_FRAME) * static_cast<uint32>(m_nBlockAlign)), static_cast<uint32>(m_nBlockAlign * 64));
 }
 
+CAPEDecompress::~CAPEDecompress()
+{
+    // check if we have anything to do
+    if (!m_bDecompressorInitialized)
+        return;
+
+    // finish threads
+    for (int i = 0; i < m_nThreads; i++)
+        m_spAPEDecompressCore[i].Delete();
+}
+
 int CAPEDecompress::SetNumberOfThreads(int nThreads)
 {
-    m_nThreads = ape_cap(nThreads, 1, 32);
+    m_nThreads = APE_CAP(nThreads, 1, 32);
     return m_nThreads;
 }
 
@@ -89,7 +100,7 @@ int CAPEDecompress::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * pBlo
 
     // cap
     const int64 nBlocksUntilFinish = m_nFinishBlock - m_nCurrentBlock;
-    const int64 nBlocksToRetrieve = ape_min(nBlocks, nBlocksUntilFinish);
+    const int64 nBlocksToRetrieve = APE_MIN(nBlocks, nBlocksUntilFinish);
 
     // get the data
     unsigned char * pBufferGet = pBuffer;
@@ -146,7 +157,7 @@ int CAPEDecompress::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * pBlo
         }
 
         // analyze how much to remove from the buffer
-        nBlocksThisPass = static_cast<int>(ape_min(nBlocksLeft, nFrameBufferBlocks));
+        nBlocksThisPass = static_cast<int>(APE_MIN(nBlocksLeft, nFrameBufferBlocks));
 
         // remove as much as possible
         if (nBlocksThisPass > 0)
@@ -192,34 +203,9 @@ int CAPEDecompress::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * pBlo
         {
             const int64 nChannels = GetInfo(IAPEDecompress::APE_INFO_CHANNELS);
             const int64 nBitdepth = GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE);
-            if (nBitdepth == 16)
-            {
-                for (int nSample = 0; nSample < nBlocksDecoded * nChannels; nSample++)
-                {
-                    const unsigned char cTemp = pBuffer[(nSample * 2) + 0];
-                    pBuffer[(nSample * 2) + 0] = pBuffer[(nSample * 2) + 1];
-                    pBuffer[(nSample * 2) + 1] = cTemp;
-                }
-            }
-            else if (nBitdepth == 24)
-            {
-                for (int nSample = 0; nSample < nBlocksDecoded * nChannels; nSample++)
-                {
-                    const unsigned char cTemp = pBuffer[(3 * nSample) + 0];
-                    pBuffer[(3 * nSample) + 0] = pBuffer[(3 * nSample) + 2];
-                    pBuffer[(3 * nSample) + 2] = cTemp;
-                }
-            }
-            else if (nBitdepth == 32)
-            {
-                uint32 * pBuffer32 = reinterpret_cast<uint32 *>(&pBuffer[0]);
-                for (int nSample = 0; nSample < nBlocksDecoded * nChannels; nSample++)
-                {
-                    const uint32 nValue = pBuffer32[nSample];
-                    const uint32 nFlippedValue = (((nValue >> 0) & 0xFF) << 24) | (((nValue >> 8) & 0xFF) << 16) | (((nValue >> 16) & 0xFF) << 8) | (((nValue >> 24) & 0xFF) << 0);
-                    pBuffer32[nSample] = nFlippedValue;
-                }
-            }
+
+            if (nBitdepth >= 16)
+                SwitchBufferBytes(pBuffer, static_cast<int>(nBitdepth / 8), static_cast<int>(nBlocksDecoded * nChannels));
         }
     }
 
@@ -251,21 +237,25 @@ int CAPEDecompress::Seek(int64 nBlockOffset)
     // seek to the perfect location
     const int64 nBaseFrame = nBlockOffset / GetInfo(APE_INFO_BLOCKS_PER_FRAME);
     const int64 nBlocksToSkip = nBlockOffset % GetInfo(APE_INFO_BLOCKS_PER_FRAME);
-    const int64 nBytesToSkip = nBlocksToSkip * m_nBlockAlign;
 
     m_nCurrentBlock = nBaseFrame * GetInfo(APE_INFO_BLOCKS_PER_FRAME);
     m_nCurrentFrame = nBaseFrame;
     m_cbFrameBuffer.Empty();
 
     // skip necessary blocks
-    CSmartPtr<unsigned char> spTempBuffer(new unsigned char [static_cast<size_t>(nBytesToSkip)], true);
-    if (spTempBuffer == APE_NULL)
-        return ERROR_INSUFFICIENT_MEMORY;
+    if (nBlocksToSkip > 0)
+    {
+        const int64 nBytesToSkip = nBlocksToSkip * m_nBlockAlign;
 
-    int64 nBlocksRetrieved = 0;
-    GetData(spTempBuffer, nBlocksToSkip, &nBlocksRetrieved, APE_NULL);
-    if (nBlocksRetrieved != nBlocksToSkip)
-        return ERROR_UNDEFINED;
+        CSmartPtr<unsigned char> spTempBuffer(new unsigned char [static_cast<size_t>(nBytesToSkip)], true);
+        if (spTempBuffer == APE_NULL)
+            return ERROR_INSUFFICIENT_MEMORY;
+
+        int64 nBlocksRetrieved = 0;
+        GetData(spTempBuffer, nBlocksToSkip, &nBlocksRetrieved, APE_NULL);
+        if (nBlocksRetrieved != nBlocksToSkip)
+            return ERROR_UNDEFINED;
+    }
 
     return ERROR_SUCCESS;
 }

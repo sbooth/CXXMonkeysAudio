@@ -8,8 +8,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 Functions to create the interfaces
 **************************************************************************************************/
@@ -119,7 +117,5 @@ extern template class CPredictorCompressNormal<int64, int>;
 extern template class CPredictorDecompress3950toCurrent<int, short>;
 extern template class CPredictorDecompress3950toCurrent<int64, int>;
 #endif
-
-#pragma pack(pop)
 
 }

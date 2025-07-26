@@ -6,8 +6,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CAPEDecompressOld : public IAPEDecompress
 {
 public:
@@ -45,7 +43,5 @@ protected:
 
     int InitializeDecompressor();
 };
-
-#pragma pack(pop)
 
 }

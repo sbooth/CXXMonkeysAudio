@@ -6,8 +6,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CAPELink
 {
 public:
@@ -28,7 +26,5 @@ protected:
 
     void ParseData(const char * pData, const str_utfn * pFilename);
 };
-
-#pragma pack(pop)
 
 }

@@ -1,7 +1,5 @@
 #include "All.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
-#define APE_ADD_GET_TO_RANGE_OVERFLOW_TABLE
-#define APE_ADD_DECODE_BYTE
 #include "APEInfo.h"
 #include "UnBitArrayOld.h"
 
@@ -10,7 +8,6 @@ namespace APE
 
 const uint32 K_SUM_MIN_BOUNDARY_OLD[32] = {0,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U,0,0,0,0,0,0};
 const uint32 K_SUM_MAX_BOUNDARY_OLD[32] = {128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U,0,0,0,0,0,0,0};
-const uint32 Powers_of_Two[32] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U };
 const uint32 Powers_of_Two_Reversed[32] = {2147483648U,1073741824,536870912,268435456,134217728,67108864,33554432,16777216,8388608,4194304,2097152,1048576,524288,262144,131072,65536,32768,16384,8192,4096,2048,1024,512,256,128,64,32,16,8,4,2,1};
 const uint32 Powers_of_Two_Minus_One_Reversed[33] = {4294967295U,2147483647,1073741823,536870911,268435455,134217727,67108863,33554431,16777215,8388607,4194303,2097151,1048575,524287,262143,131071,65535,32767,16383,8191,4095,2047,1023,511,255,127,63,31,15,7,3,1,0};
 
@@ -40,7 +37,7 @@ CUnBitArrayOld::CUnBitArrayOld(IAPEDecompress * pAPEDecompress, intn nVersion, i
             nBitArrayBytes <<= 1;
         }
 
-        nBitArrayBytes = ape_max(nBitArrayBytes, 262144);
+        nBitArrayBytes = APE_MAX(nBitArrayBytes, 262144);
     }
     else if (nVersion <= 3890)
     {
@@ -103,16 +100,6 @@ uint32 CUnBitArrayOld::DecodeValueRiceUnsigned(uint32 k)
 ////////////////////////////////////////////////////////////////////////////////////
 // Get the optimal k for a given value
 ////////////////////////////////////////////////////////////////////////////////////
-uint32 CUnBitArrayOld::Get_K(uint32 x)
-{
-    if (x == 0)
-        return 0;
-
-    uint32 k = 0;
-    while (x >= Powers_of_Two[++k]) { }
-    return k;
-}
-
 uint32 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1)
 {
     switch (DecodeMethod)
@@ -301,7 +288,7 @@ void CUnBitArrayOld::GenerateArrayRice(int * pOutputArray, uint32 nNumberOfEleme
     }
 }
 
-__forceinline int CUnBitArrayOld::DecodeValueNew(bool bCapOverflow)
+inline int CUnBitArrayOld::DecodeValueNew(bool bCapOverflow)
 {
     // make sure there is room for the data
     // this is a little slower than ensuring a huge block to start with, but it's safer

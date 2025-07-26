@@ -2,6 +2,7 @@
 #include "UnBitArrayBase.h"
 #include "APEInfo.h"
 #include "UnBitArray.h"
+#include "GlobalFunctions.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
     #include "Old/APEDecompressOld.h"
     #include "Old/UnBitArrayOld.h"
@@ -210,6 +211,10 @@ int CUnBitArrayBase::FillBitArray()
     // read the new data
     unsigned int nBytesRead = 0;
     const int nResult = m_pIO->Read(m_spBitArray + m_nElements - nBitArrayIndex, static_cast<unsigned int>(nBytesToRead), &nBytesRead);
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(&m_spBitArray[m_nElements - nBitArrayIndex], 4, nBitArrayIndex);
+#endif
 
     // zero anything at the tail we didn't fill
     m_nGoodBytes = ((m_nElements - nBitArrayIndex) * 4) + nBytesRead;

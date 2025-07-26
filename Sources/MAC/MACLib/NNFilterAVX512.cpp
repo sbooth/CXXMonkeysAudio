@@ -24,20 +24,12 @@ bool GetAVX512Available()
 
 #ifdef APE_USE_AVX512_INTRINSICS
 
-#define ADAPT_AVX512_SIMD_SHORT_ADD                              \
-{                                                                \
-    const __m512i avxM = _mm512_load_si512(&pM[z + n]);          \
-    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]); \
-    const __m512i avxNew = _mm512_add_epi16(avxM, avxAdapt);     \
-    _mm512_store_si512(&pM[z + n], avxNew);                      \
-}
-
-#define ADAPT_AVX512_SIMD_SHORT_SUB                              \
-{                                                                \
-    const __m512i avxM = _mm512_load_si512(&pM[z + n]);          \
-    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]); \
-    const __m512i avxNew = _mm512_sub_epi16(avxM, avxAdapt);     \
-    _mm512_store_si512(&pM[z + n], avxNew);                      \
+#define ADAPT_AVX512_SIMD_SHORT                                                                                    \
+{                                                                                                                  \
+    const __m512i avxM = _mm512_load_si512(&pM[z + n]);                                                            \
+    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]);                                                   \
+    const __m512i avxNew = _mm512_add_epi16(avxM, _mm512_mask_sub_epi16(avxAdapt, avxNegMask, avxZero, avxAdapt)); \
+    _mm512_mask_store_epi32(&pM[z + n], avxZeroMask, avxNew);                                                      \
 }
 
 static void AdaptAVX512(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
@@ -48,49 +40,30 @@ static void AdaptAVX512(short * pM, const short * pAdapt, int32 nDirection, int 
     // we're working up to 64 elements at a time
     ASSERT(nOrder == 32 || (nOrder % 64) == 0);
 
+    // figure out direction
+    const __m512i avxZero = _mm512_setzero_si512();
+    const __mmask16 avxZeroMask = _cvtu32_mask16(nDirection == 0 ? 0 : 0xFFFFU);
+    const __mmask32 avxNegMask = _cvtu32_mask32(nDirection < 0 ? 0 : 0xFFFFFFFFU);
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 32:
-            ADAPT_AVX512_SIMD_SHORT_ADD
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 64)
-                EXPAND_SIMD_2(n, 32, ADAPT_AVX512_SIMD_SHORT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 32:
-            ADAPT_AVX512_SIMD_SHORT_SUB
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 64)
-                EXPAND_SIMD_2(n, 32, ADAPT_AVX512_SIMD_SHORT_SUB)
-            break;
-        }
+    case 32:
+        ADAPT_AVX512_SIMD_SHORT
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 64)
+            EXPAND_SIMD_2(n, 32, ADAPT_AVX512_SIMD_SHORT)
+        break;
     }
 }
 
-#define ADAPT_AVX512_SIMD_INT_ADD                                \
-{                                                                \
-    const __m512i avxM = _mm512_load_si512(&pM[z + n]);          \
-    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]); \
-    const __m512i avxNew = _mm512_add_epi32(avxM, avxAdapt);     \
-    _mm512_store_si512(&pM[z + n], avxNew);                      \
-}
-
-#define ADAPT_AVX512_SIMD_INT_SUB                                \
-{                                                                \
-    const __m512i avxM = _mm512_load_si512(&pM[z + n]);          \
-    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]); \
-    const __m512i avxNew = _mm512_sub_epi32(avxM, avxAdapt);     \
-    _mm512_store_si512(&pM[z + n], avxNew);                      \
+#define ADAPT_AVX512_SIMD_INT                                                                                      \
+{                                                                                                                  \
+    const __m512i avxM = _mm512_load_si512(&pM[z + n]);                                                            \
+    const __m512i avxAdapt = _mm512_loadu_si512(&pAdapt[z + n]);                                                   \
+    const __m512i avxNew = _mm512_add_epi32(avxM, _mm512_mask_sub_epi32(avxAdapt, avxNegMask, avxZero, avxAdapt)); \
+    _mm512_mask_store_epi32(&pM[z + n], avxZeroMask, avxNew);                                                      \
 }
 
 static void AdaptAVX512(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
@@ -101,32 +74,21 @@ static void AdaptAVX512(int * pM, const int * pAdapt, int64 nDirection, int nOrd
     // we're working up to 32 elements at a time
     ASSERT(nOrder == 16 || (nOrder % 32) == 0);
 
+    // figure out direction
+    const __m512i avxZero = _mm512_setzero_si512();
+    const __mmask16 avxZeroMask = _cvtu32_mask16(nDirection == 0 ? 0 : 0xFFFFU);
+    const __mmask16 avxNegMask = _cvtu32_mask16(nDirection < 0 ? 0 : 0xFFFFU);
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 16:
-            ADAPT_AVX512_SIMD_INT_ADD
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_2(n, 16, ADAPT_AVX512_SIMD_INT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 16:
-            ADAPT_AVX512_SIMD_INT_SUB
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_2(n, 16, ADAPT_AVX512_SIMD_INT_SUB)
-            break;
-        }
+    case 16:
+        ADAPT_AVX512_SIMD_INT
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 32)
+            EXPAND_SIMD_2(n, 16, ADAPT_AVX512_SIMD_INT)
+        break;
     }
 }
 

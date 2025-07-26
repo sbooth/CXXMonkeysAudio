@@ -1,5 +1,4 @@
 #include "All.h"
-#define APE_ENABLE_MD5_ADD_DATA
 #include "MACLib.h"
 #include "APECompress.h"
 #include "APEDecompress.h"
@@ -644,7 +643,7 @@ int __stdcall VerifyFileW2(const APE::str_utfn * pInputFilename, IAPEProgressCal
             nBytesRead = 1;
             while ((nBytesLeft > 0) && (nBytesRead > 0))
             {
-                const unsigned int nBytesToRead = static_cast<unsigned int>(ape_min(16384, nBytesLeft));
+                const unsigned int nBytesToRead = static_cast<unsigned int>(APE_MIN(16384, nBytesLeft));
                 if (pIO->Read(spBuffer, nBytesToRead, &nBytesRead) != ERROR_SUCCESS)
                     throw(static_cast<intn>(ERROR_IO_READ));
 
@@ -821,6 +820,10 @@ int DecompressCore(const APE::str_utfn * pInputFilename, const APE::str_utfn * p
             // handle the output
             if (nOutputMode == UNMAC_DECODER_OUTPUT_WAV)
             {
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+                if (wfeInput.wBitsPerSample >= 16)
+                    SwitchBufferBytes(spTempBuffer, wfeInput.wBitsPerSample / 8, nBlocksDecoded * wfeInput.nChannels);
+#endif
                 const unsigned int nBytesToWrite = static_cast<unsigned int>(nBlocksDecoded * spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN));
                 unsigned int nBytesWritten = 0;
                 const int nWriteResult = spioOutput->Write(spTempBuffer, nBytesToWrite, &nBytesWritten);

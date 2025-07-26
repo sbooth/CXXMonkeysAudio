@@ -35,13 +35,11 @@ CopyToLittleEndian ( uint32_t*       dst,
                      const uint8_t*  src,
              size_t          length )
 {
-    for ( ; length--; src += 4; dst++  ) {
+    for ( ; length--; src += 4, dst++  ) {
     *dst = (( (uint32_t) src [3] ) << 24) |
            (( (uint32_t) src [2] ) << 16) |
            (( (uint32_t) src [1] ) <<  8) |
            (( (uint32_t) src [0] ) <<  0);
-
-
     }
 }
 #endif
@@ -86,8 +84,8 @@ MD5Transform ( uint32_t        state [4],
 
     for ( ; repeat; repeat-- ) {
     uint32_t tempBuffer [16];
-#if APE_BYTE_ORDER == APE_BIG_ENDIAN
 
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
     CopyToLittleEndian (tempBuffer, in, 16);
     x = tempBuffer;
 #else

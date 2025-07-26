@@ -3,6 +3,7 @@ Includes
 **************************************************************************************************/
 #include "All.h"
 #include "BitArray.h"
+#include "GlobalFunctions.h"
 
 namespace APE
 {
@@ -10,12 +11,8 @@ namespace APE
 /**************************************************************************************************
 Declares
 **************************************************************************************************/
-#define BIT_ARRAY_ELEMENTS            (4096)                      // the number of elements in the bit array (4 MB)
-#define BIT_ARRAY_BYTES               (BIT_ARRAY_ELEMENTS * 4)    // the number of bytes in the bit array
-#define BIT_ARRAY_BITS                (BIT_ARRAY_BYTES    * 8)    // the number of bits in the bit array
-
-#define MAX_ELEMENT_BITS              128
-#define REFILL_BIT_THRESHOLD          (BIT_ARRAY_BITS - MAX_ELEMENT_BITS)
+#define MAX_ELEMENT_BITS        128
+#define SAFE_ZONE_BITS          32
 
 #define CODE_BITS 32
 #define TOP_VALUE (static_cast<unsigned int>(1) << (CODE_BITS - 1))
@@ -42,18 +39,21 @@ const uint32 RANGE_WIDTH[64] = {19578,16582,12257,7906,4576,2366,1170,536,261,11
 /**************************************************************************************************
 Constructor
 **************************************************************************************************/
-CBitArray::CBitArray(CIO * pIO)
+CBitArray::CBitArray(uint32 nInitialBytes)
 {
-    // allocate memory for the bit array
-    m_spBitArray.Assign(new uint32[BIT_ARRAY_ELEMENTS], true);
-    memset(m_spBitArray, 0, BIT_ARRAY_BYTES);
+    // ensure initial size is a multiple of 4
+    nInitialBytes = nInitialBytes / 4 * 4;
+
+    // allocate bit array
+    m_paryBitArray = static_cast<uint32 *>(calloc(nInitialBytes, 1));
+    m_nBitArrayBytes = nInitialBytes;
+    m_nRefillThreshold = m_nBitArrayBytes * 8 - MAX_ELEMENT_BITS - SAFE_ZONE_BITS;
 
     // empty the range code information
     APE_CLEAR(m_RangeCoderInfo);
 
     // initialize other variables
     m_nCurrentBitIndex = 0;
-    m_pIO = pIO;
 }
 
 /**************************************************************************************************
@@ -61,55 +61,59 @@ Destructor
 **************************************************************************************************/
 CBitArray::~CBitArray()
 {
-    // free the bit array
-    m_spBitArray.Delete();
 #ifdef BUILD_RANGE_TABLE
     OutputRangeTable();
 #endif
+
+    // free bit array
+    free(m_paryBitArray);
 }
 
 /**************************************************************************************************
-Output the bit array via the CIO (typically saves to disk)
+Increase the bit array size
 **************************************************************************************************/
-int CBitArray::OutputBitArray(bool bFinalize)
+int CBitArray::EnlargeBitArray()
 {
-    // write the entire file to disk
-    unsigned int nBytesWritten = 0;
-    unsigned int nBytesToWrite = 0;
+    // find new bit array size (increase by 20%)
+    uint32 nNewBytes = m_nBitArrayBytes / 10 * 12;
 
-    if (bFinalize)
-    {
-        nBytesToWrite = ((m_nCurrentBitIndex >> 5) * 4) + 4;
+    // ensure new size is a multiple of 4
+    nNewBytes = nNewBytes / 4 * 4;
 
-        RETURN_ON_ERROR(m_pIO->Write(m_spBitArray, nBytesToWrite, &nBytesWritten))
+    // re-allocate bit array
+    uint32 * pNew = static_cast<uint32 *>(realloc(m_paryBitArray, nNewBytes));
+    if (pNew == APE_NULL)
+        return ERROR_INSUFFICIENT_MEMORY;
+    m_paryBitArray = pNew;
 
-        // reset the bit pointer and zero the array
-        m_nCurrentBitIndex = 0;
-        memset(m_spBitArray, 0, BIT_ARRAY_BYTES);
-    }
-    else
-    {
-        nBytesToWrite = (m_nCurrentBitIndex >> 5) * 4;
+    // zero new elements
+    memset(m_paryBitArray + m_nBitArrayBytes / 4, 0, static_cast<size_t>(nNewBytes - m_nBitArrayBytes));
 
-        RETURN_ON_ERROR(m_pIO->Write(m_spBitArray, nBytesToWrite, &nBytesWritten))
-
-        // move the last value to the front of the bit array
-        m_spBitArray[0] = m_spBitArray[m_nCurrentBitIndex >> 5];
-        m_nCurrentBitIndex = (m_nCurrentBitIndex & 31);
-
-        // zero the rest of the memory (may not need the +1 because of frame byte alignment)
-        memset(&m_spBitArray[1], 0, static_cast<size_t>(ape_min(static_cast<int>(nBytesToWrite + 1), BIT_ARRAY_BYTES - 4)));
-    }
+    m_nBitArrayBytes = nNewBytes;
+    m_nRefillThreshold = m_nBitArrayBytes * 8 - MAX_ELEMENT_BITS - SAFE_ZONE_BITS;
 
     // return a success
     return ERROR_SUCCESS;
 }
 
 /**************************************************************************************************
+Reset the bit array by zeroing it
+**************************************************************************************************/
+void CBitArray::ResetBitArray()
+{
+    // reset the bit pointer and zero the array
+    m_nCurrentBitIndex = 0;
+    memset(m_paryBitArray, 0, m_nBitArrayBytes);
+}
+
+/**************************************************************************************************
 Range coding macros -- ugly, but outperform inline's (every cycle counts here)
 **************************************************************************************************/
-#define PUTC(VALUE) m_spBitArray[m_nCurrentBitIndex >> 5] |= (static_cast<uint32>(VALUE) & 0xFF) << (24 - (m_nCurrentBitIndex & 31)); m_nCurrentBitIndex += 8;
-#define PUTC_NOCAP(VALUE) m_spBitArray[m_nCurrentBitIndex >> 5] |= static_cast<uint32>(VALUE) << (24 - (m_nCurrentBitIndex & 31)); m_nCurrentBitIndex += 8;
+#if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
+    #define PUTC(VALUE) m_paryBitArray[m_nCurrentBitIndex >> 5] |= (static_cast<uint32>(VALUE) & 0xFF) << (24 - (m_nCurrentBitIndex & 31)); m_nCurrentBitIndex += 8;
+#else
+    #define PUTC(VALUE) m_paryBitArray[m_nCurrentBitIndex >> 5] |= (static_cast<uint32>(VALUE) & 0xFF) << (m_nCurrentBitIndex & 31); m_nCurrentBitIndex += 8;
+#endif
 
 #define NORMALIZE_RANGE_CODER                                                                    \
     while (m_RangeCoderInfo.range <= BOTTOM_VALUE)                                               \
@@ -117,7 +121,7 @@ Range coding macros -- ugly, but outperform inline's (every cycle counts here)
         if (m_RangeCoderInfo.low < (0xFF << SHIFT_BITS))                                         \
         {                                                                                        \
             PUTC(m_RangeCoderInfo.buffer);                                                       \
-            for ( ; m_RangeCoderInfo.help; m_RangeCoderInfo.help--) { PUTC_NOCAP(0xFF); }        \
+            for ( ; m_RangeCoderInfo.help; m_RangeCoderInfo.help--) { PUTC(0xFF); }              \
             m_RangeCoderInfo.buffer = static_cast<unsigned char>(m_RangeCoderInfo.low >> static_cast<unsigned int>(SHIFT_BITS)); \
         }                                                                                        \
         else if (m_RangeCoderInfo.low & TOP_VALUE)                                               \
@@ -148,30 +152,14 @@ Range coding macros -- ugly, but outperform inline's (every cycle counts here)
     m_RangeCoderInfo.low += m_RangeCoderInfo.range * (VALUE);
 
 /**************************************************************************************************
-Directly encode bits to the bitstream
-**************************************************************************************************/
-int CBitArray::EncodeBits(unsigned int nValue, int nBits)
-{
-    // make sure there is room for the data
-    // this is a little slower than ensuring a huge block to start with, but it's safer
-    if (m_nCurrentBitIndex > REFILL_BIT_THRESHOLD)
-    {
-        RETURN_ON_ERROR(OutputBitArray())
-    }
-
-    ENCODE_DIRECT(nValue, nBits)
-    return ERROR_SUCCESS;
-}
-
-/**************************************************************************************************
 Encodes an unsigned int to the bit array (no rice coding)
 **************************************************************************************************/
 int CBitArray::EncodeUnsignedLong(unsigned int n)
 {
-    // make sure there are at least 8 bytes in the buffer
-    if (m_nCurrentBitIndex > (BIT_ARRAY_BYTES - 8))
+    // make sure there is room for the data
+    if (m_nCurrentBitIndex > m_nRefillThreshold)
     {
-        RETURN_ON_ERROR(OutputBitArray())
+        RETURN_ON_ERROR(EnlargeBitArray())
     }
 
     // encode the value
@@ -180,12 +168,12 @@ int CBitArray::EncodeUnsignedLong(unsigned int n)
 
     if (nBitIndex == 0)
     {
-        m_spBitArray[nBitArrayIndex] = n;
+        m_paryBitArray[nBitArrayIndex] = ConvertU32LE(n);
     }
     else
     {
-        m_spBitArray[nBitArrayIndex] |= n >> nBitIndex;
-        m_spBitArray[nBitArrayIndex + 1] = n << (32 - nBitIndex);
+        m_paryBitArray[nBitArrayIndex] |= ConvertU32LE(n) >> nBitIndex;
+        m_paryBitArray[nBitArrayIndex + 1] = ConvertU32LE(n) << (32 - nBitIndex);
     }
 
     m_nCurrentBitIndex += 32;
@@ -208,17 +196,16 @@ Encode a value
 int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
 {
     // make sure there is room for the data
-    // this is a little slower than ensuring a huge block to start with, but it's safer
-    if (m_nCurrentBitIndex > REFILL_BIT_THRESHOLD)
+    if (m_nCurrentBitIndex > m_nRefillThreshold)
     {
-        RETURN_ON_ERROR(OutputBitArray())
+        RETURN_ON_ERROR(EnlargeBitArray())
     }
 
     // convert to unsigned
     nEncode = (nEncode > 0) ? nEncode * 2 - 1 : -nEncode * 2;
 
     // figure the pivot value
-    uint32 nPivotValue = ape_max(BitArrayState.nKSum / 32, static_cast<uint32>(1));
+    uint32 nPivotValue = APE_MAX(BitArrayState.nKSum / 32, static_cast<uint32>(1));
     const uint64 nOverflow64 = static_cast<uint64>(nEncode / nPivotValue);
     uint32 nOverflow = static_cast<uint32>(nOverflow64);
     if (nOverflow != nOverflow64)

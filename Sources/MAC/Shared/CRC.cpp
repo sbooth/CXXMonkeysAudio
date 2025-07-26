@@ -94,12 +94,12 @@ uint32 CRC_update(uint32 crc, const unsigned char * pData, int nBytes)
 {
     while (nBytes >= 8)
     {
-        crc  ^= static_cast<uint32>(pData[3]) << 24 | static_cast<uint32>(pData[2]) << 16 | static_cast<uint32>(pData[1]) << 8 | static_cast<uint32>(pData[0]);
+        crc ^= static_cast<uint32>(pData[3]) << 24 | static_cast<uint32>(pData[2]) << 16 | static_cast<uint32>(pData[1]) << 8 | static_cast<uint32>(pData[0]);
 
-        crc   =    CRC32_TABLE[7][ crc       & 0xFF] ^ CRC32_TABLE[6][(crc >>  8) & 0xFF] ^
-            CRC32_TABLE[5][(crc >> 16) & 0xFF] ^ CRC32_TABLE[4][ crc >> 24          ] ^
-            CRC32_TABLE[3][pData[4]         ] ^ CRC32_TABLE[2][pData[5]          ] ^
-            CRC32_TABLE[1][pData[6]         ] ^ CRC32_TABLE[0][pData[7]          ];
+        crc  = CRC32_TABLE[7][ crc        & 0xFF] ^ CRC32_TABLE[6][(crc >>  8) & 0xFF] ^
+               CRC32_TABLE[5][(crc >> 16) & 0xFF] ^ CRC32_TABLE[4][ crc >> 24        ] ^
+               CRC32_TABLE[3][pData[4]          ] ^ CRC32_TABLE[2][pData[5]          ] ^
+               CRC32_TABLE[1][pData[6]          ] ^ CRC32_TABLE[0][pData[7]          ];
 
         pData += 8;
         nBytes -= 8;

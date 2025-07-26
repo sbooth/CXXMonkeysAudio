@@ -20,7 +20,7 @@ public:
     bool Wait();
 
 protected:
-    virtual int Run() = 0;
+    virtual void Run() = 0;
 
 #ifdef PLATFORM_WINDOWS
     CRITICAL_SECTION m_hMutex;

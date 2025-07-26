@@ -5,6 +5,10 @@
 namespace APE
 {
 
+/**************************************************************************************************
+Declares
+**************************************************************************************************/
+
 //#define BUILD_RANGE_TABLE
 
 struct RANGE_CODER_STRUCT_COMPRESS
@@ -21,44 +25,42 @@ struct BIT_ARRAY_STATE
     uint32 nKSum;
 };
 
-#pragma pack(push, 1)
-
 class CBitArray
 {
 public:
     // construction / destruction
-    CBitArray(APE::CIO * pIO);
+    CBitArray(uint32 nInitialBytes);
     virtual ~CBitArray();
 
     // encoding
     int EncodeUnsignedLong(unsigned int n);
     int EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState);
-    int EncodeBits(unsigned int nValue, int nBits);
 
-    // output (saving)
-    int OutputBitArray(bool bFinalize = false);
+    // access
+    unsigned char * GetBitArray() const { return reinterpret_cast<unsigned char *>(m_paryBitArray); }
+    uint32 GetBitArrayBytes() const { return m_nCurrentBitIndex / 8; }
 
     // other functions
     void Finalize();
     void AdvanceToByteBoundary();
-#ifdef APE_ENABLE_BIT_ARRAY_INLINES
-    __forceinline uint32 GetCurrentBitIndex() { return m_nCurrentBitIndex; }
-#endif
     void FlushState(BIT_ARRAY_STATE & BitArrayState);
     void FlushBitArray();
+    void ResetBitArray();
 
 private:
     // data members
-    CSmartPtr<uint32> m_spBitArray;
-    CIO * m_pIO;
+    uint32 * m_paryBitArray;
+    uint32 m_nBitArrayBytes;
+    uint32 m_nRefillThreshold;
     uint32 m_nCurrentBitIndex;
     RANGE_CODER_STRUCT_COMPRESS m_RangeCoderInfo;
+
+    // increase bit array size
+    int EnlargeBitArray();
 
 #ifdef BUILD_RANGE_TABLE
     void OutputRangeTable();
 #endif
 };
-
-#pragma pack(pop)
 
 }

@@ -8,8 +8,6 @@ namespace APE
 {
 class CAPECompressCreate;
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 CAPECompress - uses the CAPECompressHub to provide a simpler compression interface (with buffering, etc)
 **************************************************************************************************/
@@ -57,8 +55,6 @@ private:
     bool m_bFloat;
     WAVEFORMATEX m_wfeInput;
 };
-
-#pragma pack(pop)
 
 }
 

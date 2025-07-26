@@ -25,8 +25,8 @@ CAPEDecompressOld::CAPEDecompressOld(int * pErrorCode, CAPEInfo * pAPEInfo, int 
     m_nCurrentBlock = 0;
 
     // set the "real" start and finish blocks
-    m_nStartBlock = (nStartBlock < 0) ? 0 : ape_min(nStartBlock, static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)));
-    m_nFinishBlock = (nFinishBlock < 0) ? static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)) : ape_min(nFinishBlock, static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)));
+    m_nStartBlock = (nStartBlock < 0) ? 0 : APE_MIN(nStartBlock, static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)));
+    m_nFinishBlock = (nFinishBlock < 0) ? static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)) : APE_MIN(nFinishBlock, static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)));
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != static_cast<int>(m_spAPEInfo->GetInfo(APE_INFO_TOTAL_BLOCKS)));
 
     // version check (this implementation only works with 3.92 and earlier files)
@@ -64,7 +64,7 @@ int CAPEDecompressOld::InitializeDecompressor()
     RETURN_ON_ERROR(m_UnMAC.Initialize(this))
 
     const int64 nMaximumDecompressedFrameBytes = m_nBlockAlign * static_cast<intn>(GetInfo(APE_INFO_BLOCKS_PER_FRAME));
-    const int64 nTotalBufferBytes = ape_max(65536, (nMaximumDecompressedFrameBytes + 16) * 2);
+    const int64 nTotalBufferBytes = APE_MAX(65536, (nMaximumDecompressedFrameBytes + 16) * 2);
     m_spBuffer.Assign(new unsigned char [static_cast<unsigned int>(nTotalBufferBytes)], true);
     if (m_spBuffer == APE_NULL)
         return ERROR_INSUFFICIENT_MEMORY;
@@ -84,7 +84,7 @@ int CAPEDecompressOld::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * p
 
     // cap
     const int64 nBlocksUntilFinish = m_nFinishBlock - m_nCurrentBlock;
-    nBlocks = ape_min(nBlocks, nBlocksUntilFinish);
+    nBlocks = APE_MIN(nBlocks, nBlocksUntilFinish);
 
     int64 nBlocksRetrieved = 0;
 
@@ -97,7 +97,7 @@ int CAPEDecompressOld::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * p
     {
         // empty the buffer
         const int64 nBytesAvailable = m_nBufferTail;
-        const int64 nIntialBytes = ape_min(nBytesLeft, nBytesAvailable);
+        const int64 nIntialBytes = APE_MIN(nBytesLeft, nBytesAvailable);
         if (nIntialBytes > 0)
         {
             memcpy(&pBuffer[nTotalBytesNeeded - nBytesLeft], &m_spBuffer[0], static_cast<size_t>(nIntialBytes));

@@ -15,8 +15,6 @@ to do whatever you need. The destructor will take care of any cleanup.
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 APE_FILE_INFO - structure which describes most aspects of an APE file
 (used internally for speed and ease)
@@ -109,7 +107,5 @@ private:
     bool m_bHasFileInformationLoaded;
     bool m_bAPL;
 };
-
-#pragma pack(pop)
 
 }

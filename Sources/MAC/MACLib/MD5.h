@@ -39,27 +39,22 @@ void   MD5Init   ( MD5_CTX* ctx );
 void   MD5Update ( MD5_CTX* ctx, const uint8_t* buf, int64 len );
 void   MD5Final  ( uint8_t digest [16], MD5_CTX* ctx );
 
-#pragma pack(push, 1)
-
 class CMD5Helper
 {
 public:
     CMD5Helper();
 
-#ifdef APE_ENABLE_MD5_ADD_DATA
     __forceinline void AddData(const void * pData, int64 nBytes)
     {
         MD5Update(&m_MD5Context, static_cast<const unsigned char *>(pData), nBytes);
         m_nTotalBytes += nBytes;
     }
-#endif
+
     bool GetResult(unsigned char cResult[16]);
 
 protected:
     MD5_CTX m_MD5Context;
     int64 m_nTotalBytes;
 };
-
-#pragma pack(pop)
 
 }

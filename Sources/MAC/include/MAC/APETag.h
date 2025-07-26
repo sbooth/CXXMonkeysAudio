@@ -102,7 +102,7 @@ struct ID3_TAG
 /**************************************************************************************************
 Footer (and header) flags
 **************************************************************************************************/
-#define APE_TAG_FLAG_CONTAINS_HEADER            ((unsigned int) 1 << 31)
+#define APE_TAG_FLAG_CONTAINS_HEADER            (static_cast<unsigned int>(1 << 31))
 #define APE_TAG_FLAG_CONTAINS_FOOTER            (1 << 30)
 #define APE_TAG_FLAG_IS_HEADER                  (1 << 29)
 
@@ -119,12 +119,9 @@ Tag field flags
 #define TAG_FIELD_FLAG_DATA_TYPE_EXTERNAL_INFO  (2 << 1)
 #define TAG_FIELD_FLAG_DATA_TYPE_RESERVED       (3 << 1)
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 The footer at the end of APE tagged files (can also optionally be at the front of the tag)
 **************************************************************************************************/
-#ifdef APE_ENABLE_TAG_FOOTER
 #define APE_TAG_FOOTER_BYTES    32
 class APE_TAG_FOOTER
 {
@@ -169,7 +166,6 @@ public:
         return bValid ? true : false;
     }
 };
-#endif
 
 /**************************************************************************************************
 CAPETagField class (an APE tag is an array of these)
@@ -210,7 +206,7 @@ public:
 
 private:
     // helpers
-    void Save32(char* pBuffer, int nValue);
+    void Save32(char * pBuffer, int nValue);
 
     // data
     CSmartPtr<str_utfn> m_spFieldNameUTF16;
@@ -269,8 +265,8 @@ public:
 
     // gets a desired tag field (returns NULL if not found)
     // again, be careful, because this a pointer to the actual field in this class
-    virtual CAPETagField* GetTagField(const str_utfn * pFieldName) = 0;
-    virtual CAPETagField* GetTagField(int nIndex) = 0;
+    virtual CAPETagField * GetTagField(const str_utfn * pFieldName) = 0;
+    virtual CAPETagField * GetTagField(int nIndex) = 0;
 
     // options
     virtual void SetIgnoreReadOnly(bool bIgnoreReadOnly) = 0;
@@ -330,6 +326,7 @@ public:
     bool GetHasID3Tag();
     bool GetHasAPETag();
     int GetAPETagVersion();
+    bool GetIOMatches(APE::CIO * pIO);
 
     // gets a desired tag field (returns NULL if not found)
     // again, be careful, because this a pointer to the actual field in this class
@@ -370,7 +367,5 @@ private:
     bool m_bIgnoreReadOnly;
     bool m_bCheckForID3v1;
 };
-
-#pragma pack(pop)
 
 }

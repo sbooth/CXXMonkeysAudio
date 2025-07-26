@@ -9,8 +9,6 @@ namespace APE
 {
 class CAPECompressCore;
 
-#pragma pack(push, 1)
-
 class CAPECompressCreate
 {
 public:
@@ -56,8 +54,6 @@ private:
     int WriteFrame(unsigned char * pOutputData, uint32 nBytes);
     void FixupFrame(unsigned char * pBuffer, uint32 nBytes, uint32 nFinalWord, uint32 nFinalBytes);
 };
-
-#pragma pack(pop)
 
 }
 

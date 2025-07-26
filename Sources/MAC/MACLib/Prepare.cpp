@@ -1,6 +1,17 @@
 #include "All.h"
 #include "Prepare.h"
 #include "CRC.h"
+#include "GlobalFunctions.h"
+
+#if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
+    #define APE_24_SHIFT_1ST 0
+    #define APE_24_SHIFT_2ND 8
+    #define APE_24_SHIFT_3RD 16
+#else
+    #define APE_24_SHIFT_1ST 16
+    #define APE_24_SHIFT_2ND 8
+    #define APE_24_SHIFT_3RD 0
+#endif
 
 namespace APE
 {
@@ -21,7 +32,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
     int R, L;
 
     // calculate CRC
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(const_cast<unsigned char *>(pRawData), pWaveFormatEx->wBitsPerSample / 8, nTotalBlocks * pWaveFormatEx->nChannels);
+#endif
+
     CRC = CRC_update(CRC, pRawData, nTotalBlocks * pWaveFormatEx->nChannels * (pWaveFormatEx->wBitsPerSample / 8));
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(const_cast<unsigned char *>(pRawData), pWaveFormatEx->wBitsPerSample / 8, nTotalBlocks * pWaveFormatEx->nChannels);
+#endif
 
     // the prepare code
     if (pWaveFormatEx->wBitsPerSample == 32)
@@ -100,15 +119,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(1 * nFrameBlocks) + nBlockIndex] = L - R;
@@ -119,15 +138,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(3 * nFrameBlocks) + nBlockIndex] = L - R;
@@ -143,15 +162,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(1 * nFrameBlocks) + nBlockIndex] = L - R;
@@ -162,15 +181,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(3 * nFrameBlocks) + nBlockIndex] = L;
@@ -181,15 +200,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(5 * nFrameBlocks) + nBlockIndex] = L - R;
@@ -201,15 +220,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     // get the value
                     R = 0;
-                    R |= (*pRawData++ << 0);
-                    R |= (*pRawData++ << 8);
-                    R |= (*pRawData++ << 16);
+                    R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    R |= (*pRawData++ << APE_24_SHIFT_3RD);
                     R = (R << 8) >> 8;
 
                     L = 0;
-                    L |= (*pRawData++ << 0);
-                    L |= (*pRawData++ << 8);
-                    L |= (*pRawData++ << 16);
+                    L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    L |= (*pRawData++ << APE_24_SHIFT_3RD);
                     L = (L << 8) >> 8;
 
                     pOutput[(7 * nFrameBlocks) + nBlockIndex] = L - R;
@@ -222,9 +241,9 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     int nValue = 0;
 
-                    nValue |= (*pRawData++ << 0);
-                    nValue |= (*pRawData++ << 8);
-                    nValue |= (*pRawData++ << 16);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_3RD);
                     nValue = (nValue << 8) >> 8;
 
                     // convert to x,y
@@ -237,15 +256,15 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
             for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++)
             {
                 R = 0;
-                R |= (*pRawData++ << 0);
-                R |= (*pRawData++ << 8);
-                R |= (*pRawData++ << 16);
+                R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                R |= (*pRawData++ << APE_24_SHIFT_3RD);
                 R = (R << 8) >> 8;
 
                 L = 0;
-                L |= (*pRawData++ << 0);
-                L |= (*pRawData++ << 8);
-                L |= (*pRawData++ << 16);
+                L |= (*pRawData++ << APE_24_SHIFT_1ST);
+                L |= (*pRawData++ << APE_24_SHIFT_2ND);
+                L |= (*pRawData++ << APE_24_SHIFT_3RD);
                 L = (L << 8) >> 8;
 
                 // convert to x,y
@@ -258,9 +277,9 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
             for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++)
             {
                 R = 0;
-                R |= (*pRawData++ << 0);
-                R |= (*pRawData++ << 8);
-                R |= (*pRawData++ << 16);
+                R |= (*pRawData++ << APE_24_SHIFT_1ST);
+                R |= (*pRawData++ << APE_24_SHIFT_2ND);
+                R |= (*pRawData++ << APE_24_SHIFT_3RD);
                 R = (R << 8) >> 8;
 
                 // convert to x,y
@@ -275,9 +294,9 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
                 {
                     int nValue = 0;
 
-                    nValue |= (*pRawData++ << 0);
-                    nValue |= (*pRawData++ << 8);
-                    nValue |= (*pRawData++ << 16);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_1ST);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_2ND);
+                    nValue |= (*pRawData++ << APE_24_SHIFT_3RD);
                     nValue = (nValue << 8) >> 8;
 
                     pOutput[(nChannel * nFrameBlocks) + nBlockIndex] = nValue;
@@ -503,13 +522,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
 
                 // surrounds
@@ -520,13 +539,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
             }
             else if (pWaveFormatEx->nChannels >= 6)
@@ -539,13 +558,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
 
                 // center and subwoofer channels
@@ -556,13 +575,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
 
                 // surrounds
@@ -573,13 +592,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
 
                 // rears
@@ -591,13 +610,13 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
                     uint32 nTempL = static_cast<uint32>(nL);
                     uint32 nTempR = static_cast<uint32>(nR);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempL >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempL >> APE_24_SHIFT_3RD) & 0xFF);
 
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTempR >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTempR >> APE_24_SHIFT_3RD) & 0xFF);
                 }
 
                 const int nStartChannel = (pWaveFormatEx->nChannels == 7) ? 7 : 8;
@@ -607,9 +626,9 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
 
                     uint32 nTemp = static_cast<uint32>(nValue);
 
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
                 }
             }
             else
@@ -620,9 +639,9 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
 
                     uint32 nTemp = static_cast<uint32>(nValue);
 
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-                    *pOutput++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+                    *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
                 }
              }
         }
@@ -788,18 +807,18 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
             else
                 nTemp = static_cast<uint32>(RV);
 
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
 
             if (LV < 0)
                 nTemp = (static_cast<uint32>((LV + 0x800000)) | 0x800000);
             else
                 nTemp = static_cast<uint32>(LV);
 
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
         }
     }
     else if (pWaveFormatEx->nChannels == 1)
@@ -825,9 +844,9 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
             else
                 nTemp = static_cast<uint32>(RV);
 
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-            *pOutput++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+            *pOutput++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
         }
     }
 }
@@ -893,18 +912,18 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
                 else
                     nTemp = static_cast<uint32>(RV);
 
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
 
                 if (LV < 0)
                     nTemp = (static_cast<uint32>((LV + 0x800000)) | 0x800000);
                 else
                     nTemp = static_cast<uint32>(LV);
 
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
             }
         }
     }
@@ -940,9 +959,9 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
                 else
                     nTemp = static_cast<uint32>(RV);
 
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 0) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 8) & 0xFF);
-                *Buffer++ = static_cast<unsigned char>((nTemp >> 16) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_1ST) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_2ND) & 0xFF);
+                *Buffer++ = static_cast<unsigned char>((nTemp >> APE_24_SHIFT_3RD) & 0xFF);
             }
         }
         else
@@ -958,8 +977,16 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
     // calculate CRC
     uint32 CRC = 0xFFFFFFFF;
 
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(const_cast<unsigned char *>(pRawData), pWaveFormatEx->wBitsPerSample / 8, nBlocks * pWaveFormatEx->nChannels);
+#endif
+
     CRC = CRC_update(CRC, pRawData, static_cast<int>(nBlocks * pWaveFormatEx->nChannels * (pWaveFormatEx->wBitsPerSample / 8)));
     CRC = CRC ^ 0xFFFFFFFF;
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(const_cast<unsigned char *>(pRawData), pWaveFormatEx->wBitsPerSample / 8, nBlocks * pWaveFormatEx->nChannels);
+#endif
 
     *pCRC = CRC;
 
