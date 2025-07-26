@@ -4,7 +4,6 @@ Includes
 #include "All.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-#define APE_DECOMPRESS_CORE_GET_UNBITARRAY
 #include "APEInfo.h"
 #include "UnMAC.h"
 #include "Prepare.h"

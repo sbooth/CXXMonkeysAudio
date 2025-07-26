@@ -5,8 +5,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CWholeFileIO : public CIO
 {
 public:
@@ -47,7 +45,5 @@ private:
 };
 
 CWholeFileIO * CreateWholeFileIO(CIO * pSource, int64 nSize);
-
-#pragma pack(pop)
 
 }

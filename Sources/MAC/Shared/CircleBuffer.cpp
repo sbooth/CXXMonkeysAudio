@@ -1,6 +1,7 @@
 #include "All.h"
 #include "CircleBuffer.h"
 #include "CRC.h"
+#include "GlobalFunctions.h"
 
 namespace APE
 {
@@ -42,15 +43,25 @@ uint32 CCircleBuffer::MaxGet() const
     return (m_nTail >= m_nHead) ? m_nTail - m_nHead : (m_nEndCap - m_nHead) + m_nTail;
 }
 
-uint32 CCircleBuffer::UpdateCRC(uint32 nCRC, uint32 nBytes)
+uint32 CCircleBuffer::UpdateCRC(uint32 nCRC, uint32 nBytesPerBlock, uint32 nBlocks)
 {
-    const uint32 nFrontBytes = ape_min(m_nTail, nBytes);
-    const uint32 nHeadBytes = nBytes - nFrontBytes;
+    const uint32 nFrontBytes = APE_MIN(m_nTail, nBlocks * nBytesPerBlock);
+    const uint32 nHeadBytes = nBlocks * nBytesPerBlock - nFrontBytes;
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(&m_spBuffer[m_nEndCap - nHeadBytes], nBytesPerBlock, nHeadBytes / nBytesPerBlock);
+    SwitchBufferBytes(&m_spBuffer[m_nTail - nFrontBytes], nBytesPerBlock, nFrontBytes / nBytesPerBlock);
+#endif
 
     if (nHeadBytes > 0)
         nCRC = CRC_update(nCRC, &m_spBuffer[m_nEndCap - nHeadBytes], static_cast<int>(nHeadBytes));
 
     nCRC = CRC_update(nCRC, &m_spBuffer[m_nTail - nFrontBytes], static_cast<int>(nFrontBytes));
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    SwitchBufferBytes(&m_spBuffer[m_nEndCap - nHeadBytes], nBytesPerBlock, nHeadBytes / nBytesPerBlock);
+    SwitchBufferBytes(&m_spBuffer[m_nTail - nFrontBytes], nBytesPerBlock, nFrontBytes / nBytesPerBlock);
+#endif
 
     return nCRC;
 }
@@ -61,7 +72,7 @@ uint32 CCircleBuffer::Get(unsigned char * pBuffer, uint32 nBytes)
 
     if (pBuffer != APE_NULL && nBytes > 0)
     {
-        uint32 nHeadBytes = ape_min(m_nEndCap - m_nHead, nBytes);
+        uint32 nHeadBytes = APE_MIN(m_nEndCap - m_nHead, nBytes);
         const uint32 nFrontBytes = nBytes - nHeadBytes;
 
         memcpy(&pBuffer[0], &m_spBuffer[m_nHead], static_cast<size_t>(nHeadBytes));
@@ -88,7 +99,7 @@ void CCircleBuffer::Empty()
 
 uint32 CCircleBuffer::RemoveHead(uint32 nBytes)
 {
-    nBytes = ape_min(MaxGet(), nBytes);
+    nBytes = APE_MIN(MaxGet(), nBytes);
     m_nHead += nBytes;
     if (m_nHead >= m_nEndCap)
         m_nHead -= m_nEndCap;
@@ -97,7 +108,7 @@ uint32 CCircleBuffer::RemoveHead(uint32 nBytes)
 
 uint32 CCircleBuffer::RemoveTail(uint32 nBytes)
 {
-    nBytes = ape_min(MaxGet(), nBytes);
+    nBytes = APE_MIN(MaxGet(), nBytes);
     if (m_nTail < nBytes)
         m_nTail += m_nEndCap;
     m_nTail -= nBytes;

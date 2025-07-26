@@ -1,5 +1,4 @@
 #include "All.h"
-#define APE_ENABLE_TAG_FOOTER
 #include "APETag.h"
 #include "CharacterHelper.h"
 #include "IO.h"
@@ -19,7 +18,7 @@ CAPETagField::CAPETagField(const str_utfn * pFieldName, const void * pFieldValue
     memcpy(m_spFieldNameUTF16, pFieldName, (nFieldNameLength + 1) * sizeof(m_spFieldNameUTF16[0]));
 
     // data (we'll always allocate two extra bytes and memset to 0 so we're safely NULL terminated)
-    m_nFieldValueBytes = ape_max(nFieldBytes, 0);
+    m_nFieldValueBytes = APE_MAX(nFieldBytes, 0);
     m_spFieldValue.Assign(new char [static_cast<size_t>(m_nFieldValueBytes) + 2], true);
     memset(m_spFieldValue, 0, static_cast<size_t>(m_nFieldValueBytes) + 2);
     if (m_nFieldValueBytes > 0)
@@ -82,7 +81,7 @@ int CAPETagField::SaveField(char * pBuffer, int nBytes)
     pBuffer += strlen(spFieldNameANSI) + 1;
     nBytes -= static_cast<int>(strlen(spFieldNameANSI)) + 1;
 
-    memcpy(pBuffer, m_spFieldValue, static_cast<size_t>(ape_min(m_nFieldValueBytes, nBytes)));
+    memcpy(pBuffer, m_spFieldValue, static_cast<size_t>(APE_MIN(m_nFieldValueBytes, nBytes)));
 
     return GetFieldSize();
 }
@@ -635,6 +634,11 @@ int CAPETag::GetAPETagVersion()
     return GetHasAPETag() ? m_nAPETagVersion : -1;
 }
 
+bool CAPETag::GetIOMatches(APE::CIO * pIO)
+{
+    return (m_spIO == pIO);
+}
+
 void CAPETag::SetIgnoreReadOnly(bool bIgnoreReadOnly)
 {
     m_bIgnoreReadOnly = bIgnoreReadOnly;
@@ -785,7 +789,7 @@ int CAPETag::SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValu
     {
         const int nOriginalAllocatedFields = m_nAllocatedFields;
         m_nAllocatedFields *= 2;
-        m_nAllocatedFields = ape_max(m_nAllocatedFields, 256);
+        m_nAllocatedFields = APE_MAX(m_nAllocatedFields, 256);
         CAPETagField ** paryFields = new CAPETagField * [static_cast<size_t>(m_nAllocatedFields)];
         if (nOriginalAllocatedFields > 0)
             memcpy(paryFields, m_aryFields, sizeof(paryFields[0]) * static_cast<size_t>(nOriginalAllocatedFields));
@@ -949,7 +953,7 @@ int CAPETag::GetFieldID3String(const str_utfn * pFieldName, char * pBuffer, int 
     memset(pBuffer, 0, static_cast<size_t>(nBytes));
 
     int nStringLength = static_cast<int>(strlen(spBufferANSI.GetPtr()));
-    nStringLength = ape_min(nStringLength, nBytes);
+    nStringLength = APE_MIN(nStringLength, nBytes);
     memcpy(pBuffer, spBufferANSI.GetPtr(), static_cast<size_t>(nStringLength));
 
     return ERROR_SUCCESS;

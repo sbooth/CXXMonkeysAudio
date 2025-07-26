@@ -1,6 +1,24 @@
 #include "All.h"
 #include "CPUFeatures.h"
 
+#if defined(PLATFORM_LINUX)
+    #include <sys/auxv.h>
+
+    #if defined(__arm__)
+        #include <asm/hwcap.h>
+
+        #ifndef HWCAP_NEON
+            #define HWCAP_NEON (1 << 12)
+        #endif
+    #elif defined(__riscv)
+        #include <asm/hwcap.h>
+
+        #ifndef COMPAT_HWCAP_ISA_V
+            #define COMPAT_HWCAP_ISA_V (1 << ('V' - 'A'))
+        #endif
+    #endif
+#endif
+
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     #include <intrin.h>
     #define MSVC_CPUID
@@ -166,11 +184,34 @@ bool GetAVX512Supported()
 
 bool GetNeonSupported()
 {
-#if defined(__ARM_NEON) || defined(__ARM_NEON__) || defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__ARM_NEON) || defined(__ARM_NEON__) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+    return true;
+#elif defined(__arm__) && defined(PLATFORM_LINUX)
+    return getauxval(AT_HWCAP) & HWCAP_NEON;
+#else
+    return false;
+#endif
+}
+
+bool GetRVVSupported()
+{
+#if defined(__riscv_v)
+    return true;
+#elif defined(__riscv) && defined(PLATFORM_LINUX)
+    return getauxval(AT_HWCAP) & COMPAT_HWCAP_ISA_V;
+#else
+    return false;
+#endif
+}
+
+bool GetAltiVecSupported()
+{
+#if defined(__ALTIVEC__)
     return true;
 #else
     return false;
 #endif
 }
+
 
 }

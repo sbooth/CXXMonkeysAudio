@@ -1,5 +1,4 @@
 #include "All.h"
-#define APE_ENABLE_CIRCLE_BUFFER_WRITE
 #include "APEDecompress.h"
 #include "APEDecompressCore.h"
 #include "APEInfo.h"
@@ -9,8 +8,6 @@
 
 namespace APE
 {
-
-#define DECODE_BLOCK_SIZE        4096
 
 CAPEDecompressCore::CAPEDecompressCore(int * pErrorCode, CAPEDecompress * pDecompress, CAPEInfo * pAPEInfo)
 : m_semProcess(1), m_semReady(1)
@@ -73,7 +70,7 @@ CAPEDecompressCore::~CAPEDecompressCore()
     }
 }
 
-int CAPEDecompressCore::Run()
+void CAPEDecompressCore::Run()
 {
     while (!m_bExit)
     {
@@ -87,8 +84,6 @@ int CAPEDecompressCore::Run()
         else
             m_semReady.Post();
     }
-
-    return 0;
 }
 
 void CAPEDecompressCore::DecodeFrame(int nSkipBytes, int64 nFrameBlocks)
@@ -107,7 +102,7 @@ void CAPEDecompressCore::CancelFrame()
     m_bCancelFrame = true;
 }
 
-unsigned char* CAPEDecompressCore::GetInputBuffer(uint32 nInputBytes)
+unsigned char * CAPEDecompressCore::GetInputBuffer(uint32 nInputBytes)
 {
     if (m_nInputBytes < nInputBytes)
     {
@@ -127,13 +122,15 @@ void CAPEDecompressCore::GetFrameData(unsigned char * pBuffer)
 
 uint32 CAPEDecompressCore::GetFrameBytes() const
 {
+    if (m_bCancelFrame || m_nErrorState != ERROR_SUCCESS)
+        return 0;
+
     return static_cast<uint32>(m_nFrameBlocks) * static_cast<uint32>(m_nBlockAlign);
 }
 
 int CAPEDecompressCore::SetErrorState(int nError)
 {
     m_nErrorState = nError;
-    m_nFrameBlocks = 0;
     m_cbFrameBuffer.Empty();
 
     m_semReady.Post();
@@ -163,7 +160,7 @@ int CAPEDecompressCore::InitializeDecompressor()
     m_cbFrameBuffer.CreateBuffer(static_cast<uint32>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) * static_cast<uint32>(m_nBlockAlign), static_cast<uint32>(m_nBlockAlign * 64));
 
     // create the predictors
-    const int nChannels = ape_min(ape_max(static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)), 1), 32);
+    const int nChannels = APE_MIN(APE_MAX(static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)), 1), 32);
     const int nCompressionLevel = static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL));
     const int nVersion = static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
     const int nBitsPerSample = static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE));
@@ -246,11 +243,6 @@ int CAPEDecompressCore::DecodeFrame()
 
         nBlocksLeft -= nBlocksThisPass;
     }
-
-    if (m_bCancelFrame)
-        m_nFrameBlocks = 0;
-
-    m_bCancelFrame = false;
 
     return nResult;
 }
@@ -360,12 +352,12 @@ void CAPEDecompressCore::DecodeBlocksToFrameBuffer(int64 nBlocks)
 
     // get actual blocks that have been decoded and added to the frame buffer
     int nActualBlocks = (static_cast<int>(m_cbFrameBuffer.MaxGet()) - nFrameBufferBytes) / m_nBlockAlign;
-    nActualBlocks = ape_max(nActualBlocks, 0);
+    nActualBlocks = APE_MAX(nActualBlocks, 0);
     if (nBlocks != nActualBlocks)
         m_bErrorDecodingCurrentFrame = true;
 
     // update CRC
-    m_nCRC = m_cbFrameBuffer.UpdateCRC(m_nCRC, static_cast<uint32>(nActualBlocks * m_nBlockAlign));
+    m_nCRC = m_cbFrameBuffer.UpdateCRC(m_nCRC, static_cast<uint32>(m_wfeInput.wBitsPerSample / 8), static_cast<uint32>(nActualBlocks) * m_wfeInput.nChannels);
 }
 
 void CAPEDecompressCore::StartFrame()

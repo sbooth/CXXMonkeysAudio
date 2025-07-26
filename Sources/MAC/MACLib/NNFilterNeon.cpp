@@ -39,20 +39,12 @@ bool GetNeonAvailable()
 
 #ifdef APE_USE_NEON_INTRINSICS
 
-#define ADAPT_NEON_SIMD_SHORT_ADD                          \
-{                                                          \
-    const int16x8_t neonM = vld1q_s16(&pM[z + n]);         \
-    const int16x8_t neonAdapt = vld1q_s16(&pAdapt[z + n]); \
-    const int16x8_t neonNew = vaddq_s16(neonM, neonAdapt); \
-    vst1q_s16(&pM[z + n], neonNew);                        \
-}
-
-#define ADAPT_NEON_SIMD_SHORT_SUB                          \
-{                                                          \
-    const int16x8_t neonM = vld1q_s16(&pM[z + n]);         \
-    const int16x8_t neonAdapt = vld1q_s16(&pAdapt[z + n]); \
-    const int16x8_t neonNew = vsubq_s16(neonM, neonAdapt); \
-    vst1q_s16(&pM[z + n], neonNew);                        \
+#define ADAPT_NEON_SIMD_SHORT                                                  \
+{                                                                              \
+    const int16x8_t neonM = vld1q_s16(&pM[z + n]);                             \
+    const int16x8_t neonAdapt = vld1q_s16(&pAdapt[z + n]);                     \
+    const int16x8_t neonNew = vaddq_s16(neonM, vmulq_s16(neonAdapt, neonDir)); \
+    vst1q_s16(&pM[z + n], neonNew);                                            \
 }
 
 void AdaptNeon(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
@@ -60,49 +52,28 @@ void AdaptNeon(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
     // we're working up to 32 elements at a time
     ASSERT(nOrder == 16 || (nOrder % 32) == 0);
 
+    // figure out direction
+    const int16x8_t neonDir = vdupq_n_s16((nDirection < 0) - (nDirection > 0));
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_NEON_SIMD_SHORT_ADD)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_NEON_SIMD_SHORT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_NEON_SIMD_SHORT_SUB)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_NEON_SIMD_SHORT_SUB)
-            break;
-        }
+    case 16:
+        EXPAND_SIMD_2(n, 8, ADAPT_NEON_SIMD_SHORT)
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 32)
+            EXPAND_SIMD_4(n, 8, ADAPT_NEON_SIMD_SHORT)
+        break;
     }
 }
 
-#define ADAPT_NEON_SIMD_INT_ADD                            \
-{                                                          \
-    const int32x4_t neonM = vld1q_s32(&pM[z + n]);         \
-    const int32x4_t neonAdapt = vld1q_s32(&pAdapt[z + n]); \
-    const int32x4_t neonNew = vaddq_s32(neonM, neonAdapt); \
-    vst1q_s32(&pM[z + n], neonNew);                        \
-}
-
-#define ADAPT_NEON_SIMD_INT_SUB                            \
-{                                                          \
-    const int32x4_t neonM = vld1q_s32(&pM[z + n]);         \
-    const int32x4_t neonAdapt = vld1q_s32(&pAdapt[z + n]); \
-    const int32x4_t neonNew = vsubq_s32(neonM, neonAdapt); \
-    vst1q_s32(&pM[z + n], neonNew);                        \
+#define ADAPT_NEON_SIMD_INT                                                    \
+{                                                                              \
+    const int32x4_t neonM = vld1q_s32(&pM[z + n]);                             \
+    const int32x4_t neonAdapt = vld1q_s32(&pAdapt[z + n]);                     \
+    const int32x4_t neonNew = vaddq_s32(neonM, vmulq_s32(neonAdapt, neonDir)); \
+    vst1q_s32(&pM[z + n], neonNew);                                            \
 }
 
 void AdaptNeon(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
@@ -110,17 +81,12 @@ void AdaptNeon(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
     // we're working 16 elements at a time
     ASSERT((nOrder % 16) == 0);
 
+    // figure out direction
+    const int32x4_t neonDir = vdupq_n_s32((nDirection < 0) - (nDirection > 0));
+
     int z = 0, n = 0;
-    if (nDirection < 0)
-    {
-        for (z = 0; z < nOrder; z += 16)
-            EXPAND_SIMD_4(n, 4, ADAPT_NEON_SIMD_INT_ADD)
-    }
-    else if (nDirection > 0)
-    {
-        for (z = 0; z < nOrder; z += 16)
-            EXPAND_SIMD_4(n, 4, ADAPT_NEON_SIMD_INT_SUB)
-    }
+    for (z = 0; z < nOrder; z += 16)
+        EXPAND_SIMD_4(n, 4, ADAPT_NEON_SIMD_INT)
 }
 
 static int32 CalculateDotProductNeon(const short * pA, const short * pB, int nOrder)

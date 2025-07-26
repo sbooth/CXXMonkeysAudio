@@ -24,19 +24,11 @@ bool GetAVX2Available()
 
 #ifdef APE_USE_AVX2_INTRINSICS
 
-#define ADAPT_AVX2_SIMD_SHORT_ADD                                                                   \
+#define ADAPT_AVX2_SIMD_SHORT                                                                       \
 {                                                                                                   \
     const __m256i avxM = _mm256_load_si256(reinterpret_cast<__m256i *>(&pM[z + n]));                \
     const __m256i avxAdapt = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&pAdapt[z + n])); \
-    const __m256i avxNew = _mm256_add_epi16(avxM, avxAdapt);                                        \
-    _mm256_store_si256(reinterpret_cast<__m256i *>(&pM[z + n]), avxNew);                            \
-}
-
-#define ADAPT_AVX2_SIMD_SHORT_SUB                                                                   \
-{                                                                                                   \
-    const __m256i avxM = _mm256_load_si256(reinterpret_cast<__m256i *>(&pM[z + n]));                \
-    const __m256i avxAdapt = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&pAdapt[z + n])); \
-    const __m256i avxNew = _mm256_sub_epi16(avxM, avxAdapt);                                        \
+    const __m256i avxNew = _mm256_add_epi16(avxM, _mm256_sign_epi16(avxAdapt, avxDir));             \
     _mm256_store_si256(reinterpret_cast<__m256i *>(&pM[z + n]), avxNew);                            \
 }
 
@@ -48,54 +40,30 @@ static void AdaptAVX2(short * pM, const short * pAdapt, int32 nDirection, int nO
     // we're working up to 64 elements at a time
     ASSERT(nOrder == 16 || nOrder == 32 || (nOrder % 64) == 0);
 
+    // figure out direction
+    const __m256i avxDir = _mm256_set1_epi16((nDirection < 0) - (nDirection > 0));
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 16:
-            ADAPT_AVX2_SIMD_SHORT_ADD
-            break;
-        case 32:
-            EXPAND_SIMD_2(n, 16, ADAPT_AVX2_SIMD_SHORT_ADD)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 64)
-                EXPAND_SIMD_4(n, 16, ADAPT_AVX2_SIMD_SHORT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 16:
-            ADAPT_AVX2_SIMD_SHORT_SUB
-            break;
-        case 32:
-            EXPAND_SIMD_2(n, 16, ADAPT_AVX2_SIMD_SHORT_SUB)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 64)
-                EXPAND_SIMD_4(n, 16, ADAPT_AVX2_SIMD_SHORT_SUB)
-            break;
-        }
+    case 16:
+        ADAPT_AVX2_SIMD_SHORT
+        break;
+    case 32:
+        EXPAND_SIMD_2(n, 16, ADAPT_AVX2_SIMD_SHORT)
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 64)
+            EXPAND_SIMD_4(n, 16, ADAPT_AVX2_SIMD_SHORT)
+        break;
     }
 }
 
-#define ADAPT_AVX2_SIMD_INT_ADD                                                                     \
+#define ADAPT_AVX2_SIMD_INT                                                                         \
 {                                                                                                   \
     const __m256i avxM = _mm256_load_si256(reinterpret_cast<__m256i *>(&pM[z + n]));                \
     const __m256i avxAdapt = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&pAdapt[z + n])); \
-    const __m256i avxNew = _mm256_add_epi32(avxM, avxAdapt);                                        \
-    _mm256_store_si256(reinterpret_cast<__m256i *>(&pM[z + n]), avxNew);                            \
-}
-
-#define ADAPT_AVX2_SIMD_INT_SUB                                                                     \
-{                                                                                                   \
-    const __m256i avxM = _mm256_load_si256(reinterpret_cast<__m256i *>(&pM[z + n]));                \
-    const __m256i avxAdapt = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&pAdapt[z + n])); \
-    const __m256i avxNew = _mm256_sub_epi32(avxM, avxAdapt);                                        \
+    const __m256i avxNew = _mm256_add_epi32(avxM, _mm256_sign_epi32(avxAdapt, avxDir));             \
     _mm256_store_si256(reinterpret_cast<__m256i *>(&pM[z + n]), avxNew);                            \
 }
 
@@ -107,32 +75,19 @@ static void AdaptAVX2(int * pM, const int * pAdapt, int64 nDirection, int nOrder
     // we're working up to 32 elements at a time
     ASSERT(nOrder == 16 || (nOrder % 32) == 0);
 
+    // figure out direction
+    const __m256i avxDir = _mm256_set1_epi32((nDirection < 0) - (nDirection > 0));
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_AVX2_SIMD_INT_ADD)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_AVX2_SIMD_INT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_AVX2_SIMD_INT_SUB)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_AVX2_SIMD_INT_SUB)
-            break;
-        }
+    case 16:
+        EXPAND_SIMD_2(n, 8, ADAPT_AVX2_SIMD_INT)
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 32)
+            EXPAND_SIMD_4(n, 8, ADAPT_AVX2_SIMD_INT)
+        break;
     }
 }
 

@@ -223,7 +223,7 @@ int CWinFileIO::Create(const wchar_t * pName)
     {
         m_hFile = GetStdHandle(STD_OUTPUT_HANDLE);
         if (m_hFile == INVALID_HANDLE_VALUE)
-            return ERROR_IO_WRITE;
+            return ERROR_INVALID_OUTPUT_FILE;
 
         m_bReadOnly = false;
     }
@@ -231,7 +231,13 @@ int CWinFileIO::Create(const wchar_t * pName)
     {
         m_hFile = CreateFile(spName, GENERIC_WRITE | GENERIC_READ, 0, APE_NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, APE_NULL);
         if (m_hFile == INVALID_HANDLE_VALUE)
-            return ERROR_IO_WRITE;
+        {
+            DWORD dwError = GetLastError();
+            if (dwError == ERROR_ACCESS_DENIED)
+                return ERROR_UAC_PERMISSION;
+            else
+                return ERROR_INVALID_OUTPUT_FILE;
+        }
 
         m_bReadOnly = false;
     }

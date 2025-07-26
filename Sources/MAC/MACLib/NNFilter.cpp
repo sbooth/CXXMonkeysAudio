@@ -56,6 +56,22 @@ template <class INTTYPE, class DATATYPE> CNNFilter<INTTYPE, DATATYPE>::CNNFilter
     }
 #endif
 
+#if defined(__riscv)
+    if (GetRVVAvailable() && GetRVVSupported())
+    {
+        CompressImpl = &CNNFilter::CompressRVV;
+        DecompressImpl = &CNNFilter::DecompressRVV;
+    }
+#endif
+
+#if defined(__ppc__) || defined(__powerpc__)
+    if (GetAltiVecAvailable() && GetAltiVecSupported())
+    {
+        CompressImpl = &CNNFilter::CompressAltiVec;
+        DecompressImpl = &CNNFilter::DecompressAltiVec;
+    }
+#endif
+
     m_paryM = static_cast<DATATYPE *>(AllocateAligned(static_cast<intn>(sizeof(DATATYPE)) * m_nOrder, 64)); // align for possible SSE/AVX usage
 }
 

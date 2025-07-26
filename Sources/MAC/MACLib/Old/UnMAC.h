@@ -16,9 +16,6 @@ class IAPEDecompress;
 /**************************************************************************************************
 CUnMAC class... a class that allows decoding on a frame-by-frame basis
 **************************************************************************************************/
-
-#pragma pack(push, 1)
-
 class CUnMAC
 {
 public:
@@ -58,7 +55,5 @@ public:
 private:
     bool m_bInitialized;
 };
-
-#pragma pack(pop)
 
 }

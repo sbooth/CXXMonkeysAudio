@@ -25,23 +25,14 @@ bool GetSSE2Available()
 #ifdef APE_USE_SSE2_INTRINSICS
 
 void AdaptSSE2(short * pM, const short * pAdapt, int32 nDirection, int nOrder);
-void AdaptSSE2(int * pM, const int * pAdapt, int64 nDirection, int nOrder);
 
 int32 CalculateDotProductSSE2(const short * pA, const short * pB, int nOrder);
 
-#define ADAPT_SSE2_SIMD_SHORT_ADD                                                                \
+#define ADAPT_SSE2_SIMD_SHORT                                                                    \
 {                                                                                                \
     const __m128i sseM = _mm_load_si128(reinterpret_cast<const __m128i *>(&pM[z + n]));          \
     const __m128i sseAdapt = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&pAdapt[z + n])); \
-    const __m128i sseNew = _mm_add_epi16(sseM, sseAdapt);                                        \
-    _mm_store_si128(reinterpret_cast<__m128i *>(&pM[z + n]), sseNew);                            \
-}
-
-#define ADAPT_SSE2_SIMD_SHORT_SUB                                                                \
-{                                                                                                \
-    const __m128i sseM = _mm_load_si128(reinterpret_cast<const __m128i *>(&pM[z + n]));          \
-    const __m128i sseAdapt = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&pAdapt[z + n])); \
-    const __m128i sseNew = _mm_sub_epi16(sseM, sseAdapt);                                        \
+    const __m128i sseNew = _mm_add_epi16(sseM, _mm_mullo_epi16(sseAdapt, sseDir));               \
     _mm_store_si128(reinterpret_cast<__m128i *>(&pM[z + n]), sseNew);                            \
 }
 
@@ -53,32 +44,19 @@ void AdaptSSE2(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
     // we're working up to 32 elements at a time
     ASSERT(nOrder == 16 || (nOrder % 32) == 0);
 
+    // figure out direction
+    const __m128i sseDir = _mm_set1_epi16((nDirection < 0) - (nDirection > 0));
+
     int z = 0, n = 0;
-    if (nDirection < 0)
+    switch (nOrder)
     {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_SSE2_SIMD_SHORT_ADD)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_SSE2_SIMD_SHORT_ADD)
-            break;
-        }
-    }
-    else if (nDirection > 0)
-    {
-        switch (nOrder)
-        {
-        case 16:
-            EXPAND_SIMD_2(n, 8, ADAPT_SSE2_SIMD_SHORT_SUB)
-            break;
-        default:
-            for (z = 0; z < nOrder; z += 32)
-                EXPAND_SIMD_4(n, 8, ADAPT_SSE2_SIMD_SHORT_SUB)
-            break;
-        }
+    case 16:
+        EXPAND_SIMD_2(n, 8, ADAPT_SSE2_SIMD_SHORT)
+        break;
+    default:
+        for (z = 0; z < nOrder; z += 32)
+            EXPAND_SIMD_4(n, 8, ADAPT_SSE2_SIMD_SHORT)
+        break;
     }
 }
 
@@ -98,7 +76,7 @@ void AdaptSSE2(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
     _mm_store_si128(reinterpret_cast<__m128i *>(&pM[z + n]), sseNew);                            \
 }
 
-void AdaptSSE2(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
+static void AdaptSSE2(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
 {
     // we require that pM is aligned, allowing faster loads and stores
     ASSERT((reinterpret_cast<size_t>(pM) % 16) == 0);

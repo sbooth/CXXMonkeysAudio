@@ -31,7 +31,7 @@ int CMemoryIO::Close()
 
 int CMemoryIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead)
 {
-    *pBytesRead = ape_min(nBytesToRead, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
+    *pBytesRead = APE_MIN(nBytesToRead, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
     memcpy(pBuffer, m_pBuffer + m_nPosition, *pBytesRead);
     m_nPosition += *pBytesRead;
     return ERROR_SUCCESS;
@@ -39,7 +39,7 @@ int CMemoryIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pB
 
 int CMemoryIO::Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten)
 {
-    *pBytesWritten = ape_min(nBytesToWrite, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
+    *pBytesWritten = APE_MIN(nBytesToWrite, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
     memcpy(m_pBuffer + m_nPosition, pBuffer, *pBytesWritten);
     m_nPosition += *pBytesWritten;
     return ERROR_SUCCESS;

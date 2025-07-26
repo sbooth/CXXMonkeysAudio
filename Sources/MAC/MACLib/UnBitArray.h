@@ -5,8 +5,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class IAPEDecompress;
 
 /**************************************************************************************************
@@ -36,7 +34,5 @@ private:
     uint32 RangeDecodeFastWithUpdate(int nShift);
     void GenerateArrayRange(int * pOutputArray, int nElements);
 };
-
-#pragma pack(pop)
 
 }

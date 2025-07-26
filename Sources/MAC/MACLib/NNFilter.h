@@ -10,8 +10,6 @@ namespace APE
 
 class IPredictorDecompress;
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 CNNFilter
 **************************************************************************************************/
@@ -53,6 +51,16 @@ private:
     INTTYPE DecompressNeon(INTTYPE nInput);
 #endif
 
+#if defined(__riscv)
+    INTTYPE CompressRVV(INTTYPE nInput);
+    INTTYPE DecompressRVV(INTTYPE nInput);
+#endif
+
+#if defined(__ppc__) || defined(__powerpc__)
+    INTTYPE CompressAltiVec(INTTYPE nInput);
+    INTTYPE DecompressAltiVec(INTTYPE nInput);
+#endif
+
     const int m_nOrder;
     const int m_nShift;
     const int m_nOneShiftedByShift;
@@ -73,7 +81,5 @@ private:
 extern template class CNNFilter<int, short>;
 extern template class CNNFilter<int64, int>;
 #endif
-
-#pragma pack(pop)
 
 }

@@ -1,5 +1,4 @@
 #include "All.h"
-#define APE_ENABLE_MD5_ADD_DATA
 #include "IO.h"
 #include "APECompressCreate.h"
 #include "APECompressCore.h"
@@ -168,19 +167,19 @@ int CAPECompressCreate::WriteFrame(unsigned char * pOutputData, uint32 nBytes)
     return ERROR_SUCCESS;
 }
 
-void CAPECompressCreate::FixupFrame(unsigned char* pBuffer, uint32 nBytes, uint32 nFinalWord, uint32 nFinalBytes)
+void CAPECompressCreate::FixupFrame(unsigned char * pBuffer, uint32 nBytes, uint32 nFinalWord, uint32 nFinalBytes)
 {
     if (nFinalBytes == 0)
         return;
 
-    unsigned int nWords = nBytes / 4 + 1;
+    int nWords = static_cast<int>(nBytes / 4 + 1);
 
-    SwitchBufferByteOrder(reinterpret_cast<uint32 *>(pBuffer), nWords);
+    SwitchBufferBytes(reinterpret_cast<uint32 *>(pBuffer), 4, nWords);
 
     memmove(pBuffer + nFinalBytes, pBuffer, nBytes);
     memcpy(pBuffer, &nFinalWord, nFinalBytes);
 
-    SwitchBufferByteOrder(reinterpret_cast<uint32 *>(pBuffer), nWords);
+    SwitchBufferBytes(reinterpret_cast<uint32 *>(pBuffer), 4, nWords);
 }
 
 int CAPECompressCreate::Finish(const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes)
@@ -225,7 +224,7 @@ int CAPECompressCreate::SetSeekByte(int nFrame, int64 nByteOffset)
         return ERROR_APE_COMPRESS_TOO_MUCH_DATA;
     }
     const uint32 nSeekEntry = static_cast<uint32>(nByteOffset); // we let this overflow then correct the overflows when we parse the table
-    m_spSeekTable[nFrame] = nSeekEntry;
+    m_spSeekTable[nFrame] = ConvertU32LE(nSeekEntry);
     return ERROR_SUCCESS;
 }
 
@@ -248,24 +247,24 @@ int CAPECompressCreate::InitializeFile(CIO * pIO, const WAVEFORMATEX * pwfeInput
     APEDescriptor.cID[2] = 'C';
     APEDescriptor.cID[3] = (nFlags & APE_FORMAT_FLAG_FLOATING_POINT) ? 'F' : ' ';
 
-    APEDescriptor.nVersion = APE_FILE_VERSION_NUMBER;
+    APEDescriptor.nVersion = ConvertU16LE(APE_FILE_VERSION_NUMBER);
     APEDescriptor.nPadding = 0; // set to zero even though we memset above to be clean
 
-    APEDescriptor.nDescriptorBytes = sizeof(APEDescriptor);
-    APEDescriptor.nHeaderBytes = sizeof(APEHeader);
-    APEDescriptor.nSeekTableBytes = static_cast<uint32>(nMaxFrames) * static_cast<uint32>(sizeof(unsigned int));
-    APEDescriptor.nHeaderDataBytes = static_cast<uint32>((nHeaderBytes == CREATE_WAV_HEADER_ON_DECOMPRESSION) ? 0 : nHeaderBytes);
+    APEDescriptor.nDescriptorBytes = ConvertU32LE(sizeof(APEDescriptor));
+    APEDescriptor.nHeaderBytes = ConvertU32LE(sizeof(APEHeader));
+    APEDescriptor.nSeekTableBytes = ConvertU32LE(static_cast<uint32>(nMaxFrames) * static_cast<uint32>(sizeof(unsigned int)));
+    APEDescriptor.nHeaderDataBytes = ConvertU32LE(static_cast<uint32>((nHeaderBytes == CREATE_WAV_HEADER_ON_DECOMPRESSION) ? 0 : nHeaderBytes));
 
     // create the header (only fill what we know now)
-    APEHeader.nBitsPerSample = pwfeInput->wBitsPerSample;
-    APEHeader.nChannels = pwfeInput->nChannels;
-    APEHeader.nSampleRate = pwfeInput->nSamplesPerSec;
+    APEHeader.nBitsPerSample = ConvertU16LE(pwfeInput->wBitsPerSample);
+    APEHeader.nChannels = ConvertU16LE(pwfeInput->nChannels);
+    APEHeader.nSampleRate = ConvertU32LE(pwfeInput->nSamplesPerSec);
 
-    APEHeader.nCompressionLevel = static_cast<uint16>(nCompressionLevel);
-    APEHeader.nFormatFlags = static_cast<uint16>(nFlags);
-    APEHeader.nFormatFlags |= static_cast<uint16>((nHeaderBytes == CREATE_WAV_HEADER_ON_DECOMPRESSION) ? APE_FORMAT_FLAG_CREATE_WAV_HEADER : 0);
+    APEHeader.nCompressionLevel = ConvertU16LE(static_cast<uint16>(nCompressionLevel));
+    APEHeader.nFormatFlags = ConvertU16LE(static_cast<uint16>(nFlags));
+    APEHeader.nFormatFlags |= ConvertU16LE(static_cast<uint16>((nHeaderBytes == CREATE_WAV_HEADER_ON_DECOMPRESSION) ? APE_FORMAT_FLAG_CREATE_WAV_HEADER : 0));
 
-    APEHeader.nBlocksPerFrame = static_cast<uint32>(m_nBlocksPerFrame);
+    APEHeader.nBlocksPerFrame = ConvertU32LE(static_cast<uint32>(m_nBlocksPerFrame));
 
     // write the data to the file
     unsigned int nBytesWritten = 0;
@@ -334,14 +333,14 @@ int CAPECompressCreate::FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalF
     if (nResult != 0 || nBytesRead != sizeof(APEHeader)) { return ERROR_IO_READ; }
 
     // update the header
-    APEHeader.nFinalFrameBlocks = static_cast<uint32>(nFinalFrameBlocks);
-    APEHeader.nTotalFrames = static_cast<uint32>(nNumberOfFrames);
+    APEHeader.nFinalFrameBlocks = ConvertU32LE(static_cast<uint32>(nFinalFrameBlocks));
+    APEHeader.nTotalFrames = ConvertU32LE(static_cast<uint32>(nNumberOfFrames));
 
     // update the descriptor
-    const int64 nFrameDataBytes = nTailPosition - (static_cast<int64>(APEDescriptor.nDescriptorBytes) + static_cast<int64>(APEDescriptor.nHeaderBytes) + static_cast<int64>(APEDescriptor.nSeekTableBytes) + static_cast<int64>(APEDescriptor.nHeaderDataBytes));
-    APEDescriptor.nAPEFrameDataBytes = static_cast<uint32>(nFrameDataBytes & 0xFFFFFFFF);
-    APEDescriptor.nAPEFrameDataBytesHigh = static_cast<uint32>(nFrameDataBytes >> 32);
-    APEDescriptor.nTerminatingDataBytes = static_cast<uint32>(nWAVTerminatingBytes);
+    const int64 nFrameDataBytes = nTailPosition - (static_cast<int64>(ConvertU32LE(APEDescriptor.nDescriptorBytes)) + static_cast<int64>(ConvertU32LE(APEDescriptor.nHeaderBytes)) + static_cast<int64>(ConvertU32LE(APEDescriptor.nSeekTableBytes)) + static_cast<int64>(ConvertU32LE(APEDescriptor.nHeaderDataBytes)));
+    APEDescriptor.nAPEFrameDataBytes = ConvertU32LE(static_cast<uint32>(nFrameDataBytes & 0xFFFFFFFF));
+    APEDescriptor.nAPEFrameDataBytesHigh = ConvertU32LE(static_cast<uint32>(nFrameDataBytes >> 32));
+    APEDescriptor.nTerminatingDataBytes = ConvertU32LE(static_cast<uint32>(nWAVTerminatingBytes));
 
     // update the MD5
     m_MD5.AddData(&APEHeader, sizeof(APEHeader));

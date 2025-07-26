@@ -7,8 +7,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CWinFileIO : public CIO
 {
 public:
@@ -47,8 +45,6 @@ private:
     bool        m_bReadOnly;
     bool        m_bPipe;
 };
-
-#pragma pack(pop)
 
 }
 

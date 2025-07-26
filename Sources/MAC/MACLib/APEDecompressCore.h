@@ -15,8 +15,6 @@ class CAPEInfo;
 class CAPEDecompress;
 class IPredictorDecompress;
 
-#pragma pack(push, 1)
-
 class CAPEDecompressCore : public CThread
 {
 public:
@@ -37,7 +35,7 @@ public:
     uint32 GetFrameBytes() const;
 
 protected:
-    int Run();
+    void Run();
 
     CSemaphore m_semProcess;
     CSemaphore m_semReady;
@@ -69,7 +67,7 @@ protected:
     void EndFrame();
 
     // more decoding components
-    CAPEInfo* m_pAPEInfo;
+    CAPEInfo * m_pAPEInfo;
     CSmartPtr<CUnBitArrayBase> m_spUnBitArray;
     UNBIT_ARRAY_STATE m_aryBitArrayStates[APE_MAXIMUM_CHANNELS];
     IPredictorDecompress * m_aryPredictor[APE_MAXIMUM_CHANNELS];
@@ -83,7 +81,5 @@ protected:
     bool m_bInterimMode;
     bool m_bExit;
 };
-
-#pragma pack(pop)
 
 }

@@ -67,31 +67,25 @@ template <class TYPE, int WINDOW_ELEMENTS, int HISTORY_ELEMENTS> class CRollBuff
 public:
     CRollBufferFast()
     {
-        m_pData = new TYPE [WINDOW_ELEMENTS + HISTORY_ELEMENTS];
         Flush();
-    }
-
-    ~CRollBufferFast()
-    {
-        APE_SAFE_ARRAY_DELETE(m_pData)
     }
 
     void Flush()
     {
-        ZeroMemory(m_pData, (HISTORY_ELEMENTS + 1) * sizeof(TYPE));
-        m_pCurrent = &m_pData[HISTORY_ELEMENTS];
+        ZeroMemory(m_aryData, (HISTORY_ELEMENTS + 1) * sizeof(TYPE));
+        m_pCurrent = &m_aryData[HISTORY_ELEMENTS];
     }
 
     void Roll()
     {
-        memmove(&m_pData[0], &m_pCurrent[-HISTORY_ELEMENTS], HISTORY_ELEMENTS * sizeof(TYPE));
-        m_pCurrent = &m_pData[HISTORY_ELEMENTS];
+        memmove(&m_aryData[0], &m_pCurrent[-HISTORY_ELEMENTS], HISTORY_ELEMENTS * sizeof(TYPE));
+        m_pCurrent = &m_aryData[HISTORY_ELEMENTS];
     }
 
     __forceinline void IncrementSafe()
     {
         m_pCurrent++;
-        if (m_pCurrent == &m_pData[WINDOW_ELEMENTS + HISTORY_ELEMENTS])
+        if (m_pCurrent == &m_aryData[WINDOW_ELEMENTS + HISTORY_ELEMENTS])
             Roll();
     }
 
@@ -106,8 +100,8 @@ public:
     }
 
 protected:
-    TYPE * m_pData;
     TYPE * m_pCurrent;
+    TYPE m_aryData[WINDOW_ELEMENTS + HISTORY_ELEMENTS];
 };
 
 }

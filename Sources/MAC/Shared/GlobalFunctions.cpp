@@ -51,10 +51,8 @@ bool FileExists(const wchar_t * pFilename)
     if (0 == wcscmp(pFilename, L"-")  ||  0 == wcscmp(pFilename, L"/dev/stdin"))
         return true;
 
-#ifdef _WIN32
-
+#ifdef PLATFORM_WINDOWS
     bool bFound = false;
-
     WIN32_FIND_DATA WFD;
 #ifdef UNICODE
     HANDLE hFind = FindFirstFile(pFilename, &WFD);
@@ -69,9 +67,7 @@ bool FileExists(const wchar_t * pFilename)
     }
 
     return bFound;
-
 #else
-
     CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTF16(pFilename), true);
 
     struct stat b;
@@ -83,7 +79,6 @@ bool FileExists(const wchar_t * pFilename)
         return false;
 
     return true;
-
 #endif
 }
 
@@ -107,7 +102,7 @@ void * AllocateAligned(intn nBytes, intn nAlignment)
 
 void FreeAligned(void * pMemory)
 {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     _aligned_free(pMemory);
 #else
     free(pMemory);
@@ -149,15 +144,30 @@ bool StringIsEqual(const str_utfn * pString1, const str_utfn * pString2, bool bC
     return bResult;
 }
 
-uint32 SwitchByteOrder(uint32 nValue)
+void SwitchBufferBytes(void * pBuffer, int nBytesPerBlock, int nBlocks)
 {
-    return (nValue << 24) | ((nValue & 0xFF00) << 8) | ((nValue & 0xFF0000) >> 8) | (nValue >> 24);
-}
-
-void SwitchBufferByteOrder(uint32 * pBuffer, uint32 nWords)
-{
-    for (unsigned int i = 0; i < nWords; i++)
-        pBuffer[i] = SwitchByteOrder(pBuffer[i]);
+    if (nBytesPerBlock == 2)
+    {
+        uint16 * pShortBuffer = static_cast<uint16 *>(pBuffer);
+        for (int i = 0; i < nBlocks; i++)
+            pShortBuffer[i] = Switch2Bytes(pShortBuffer[i]);
+    }
+    else if (nBytesPerBlock == 3)
+    {
+        uint8 * pByteBuffer = static_cast<uint8 *>(pBuffer);
+        for (int i = 0; i < nBlocks * nBytesPerBlock; i += nBytesPerBlock)
+        {
+            uint8 nTemp = pByteBuffer[i];
+            pByteBuffer[i    ] = pByteBuffer[i + 2];
+            pByteBuffer[i + 2] = nTemp;
+        }
+    }
+    else if (nBytesPerBlock == 4)
+    {
+        uint32 * pLongBuffer = static_cast<uint32 *>(pBuffer);
+        for (int i = 0; i < nBlocks; i++)
+            pLongBuffer[i] = Switch4Bytes(pLongBuffer[i]);
+    }
 }
 
 }

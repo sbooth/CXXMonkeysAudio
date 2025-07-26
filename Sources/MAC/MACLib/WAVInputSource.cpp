@@ -10,28 +10,15 @@
 namespace APE
 {
 
-#define Swap2Bytes(val) \
-((((val) >> 8) & 0x00FF) | (((val) << 8) & 0xFF00))
-
-#define Swap4Bytes(val) \
-((((val) >> 24) & 0x000000FF) | (((val) >> 8) & 0x0000FF00) | \
-(((val) << 8) & 0x00FF0000) | (((val) << 24) & 0xFF000000))
-
-#define Swap8Bytes(val) \
-((((val) >> 56) & 0x00000000000000FFULL) | (((val) >> 40) & 0x000000000000FF00ULL) | \
-(((val) >> 24) & 0x0000000000FF0000ULL) | (((val) >> 8) & 0x00000000FF000000ULL) | \
-(((val) << 8) & 0x000000FF00000000ULL) | (((val) << 24) & 0x0000FF0000000000ULL) | \
-(((val) << 40) & 0x00FF000000000000ULL) | (((val) << 56) & 0xFF00000000000000ULL))
-
 struct RIFF_HEADER
 {
-    char cRIFF[4];            // the characters 'RIFF' indicating that it's a RIFF file
-    uint32_t nBytes;          // the number of bytes following this header
+    char cRIFF[4];                // the characters 'RIFF' indicating that it's a RIFF file
+    uint32_t nBytes;              // the number of bytes following this header
 };
 
 struct DATA_TYPE_ID_HEADER
 {
-    char cDataTypeID[4];      // should equal 'WAVE' for a WAV file
+    char cDataTypeID[4];          // should equal 'WAVE' for a WAV file
 };
 
 struct WAV_FORMAT_HEADER
@@ -46,8 +33,8 @@ struct WAV_FORMAT_HEADER
 
 struct RIFF_CHUNK_HEADER
 {
-    char cChunkLabel[4];        // should equal "data" indicating the data chunk
-    uint32_t nChunkBytes;       // the bytes of the chunk
+    char cChunkLabel[4];          // should equal "data" indicating the data chunk
+    uint32_t nChunkBytes;         // the bytes of the chunk
 };
 
 /**************************************************************************************************
@@ -224,38 +211,6 @@ void CInputSource::Convert8BitSignedToUnsigned(unsigned char * pBuffer, int nCha
     }
 }
 
-void CInputSource::FlipEndian(unsigned char * pBuffer, int nBitsPerSample, int nChannels, int nBlocks)
-{
-    if (nBitsPerSample == 16)
-    {
-        for (int nSample = 0; nSample < nBlocks * nChannels; nSample++)
-        {
-            const unsigned char cTemp = pBuffer[(nSample * 2) + 0];
-            pBuffer[(nSample * 2) + 0] = pBuffer[(nSample * 2) + 1];
-            pBuffer[(nSample * 2) + 1] = cTemp;
-        }
-    }
-    else if (nBitsPerSample == 24)
-    {
-        for (int nSample = 0; nSample < nBlocks * nChannels; nSample++)
-        {
-            const unsigned char cTemp = pBuffer[(nSample * 3) + 0];
-            pBuffer[(nSample * 3) + 0] = pBuffer[(nSample * 3) + 2];
-            pBuffer[(nSample * 3) + 2] = cTemp;
-        }
-    }
-    else if (nBitsPerSample == 32)
-    {
-        uint32_t * pBufferUINT32 = reinterpret_cast<uint32_t *>(pBuffer);
-        for (int nSample = 0; nSample < nBlocks * nChannels; nSample++)
-        {
-            const uint32_t nValue = pBufferUINT32[nSample];
-            const uint32_t nFlippedValue = (((nValue >> 0) & 0xFF) << 24) | (((nValue >> 8) & 0xFF) << 16) | (((nValue >> 16) & 0xFF) << 8) | (((nValue >> 24) & 0xFF) << 0);
-            pBufferUINT32[nSample] = nFlippedValue;
-        }
-    }
-}
-
 /**************************************************************************************************
 CWAVInputSource - wraps working with WAV files
 **************************************************************************************************/
@@ -280,7 +235,6 @@ CWAVInputSource::CWAVInputSource(CIO * pIO, WAVEFORMATEX * pwfeSource, int64 * p
     m_nHeaderBytes = 0;
     m_bFloat = false; // we need a boolean instead of just checking WAVE_FORMAT_IEEE_FLOAT since it can be extensible with the format float
     APE_CLEAR(m_wfeSource);
-
     m_bUnknownLengthFile = false;
 
     if (pIO == APE_NULL || pwfeSource == APE_NULL)
@@ -334,24 +288,19 @@ int CWAVInputSource::AnalyzeSource()
         return ERROR_INVALID_INPUT_FILE;
     }
 
-    // sanity check (a file gotten from David Bryant was tripping this for example)
+    // handle size in the RIFF header
     if (m_nFileBytes == APE_FILE_SIZE_UNDEFINED)
-        RIFFHeader.nBytes = static_cast<uint32_t>(-1);
-    else if (RIFFHeader.nBytes > m_nFileBytes)
-        RIFFHeader.nBytes = static_cast<uint32_t>(-1);
-
-    // get the file size from RIFF header in case we're a pipe and use the maximum
-    if (RIFFHeader.nBytes != static_cast<uint32_t>(-1))
     {
-        // use maximum size between header and file size
-        const int64 nHeaderBytes = static_cast<int64>(RIFFHeader.nBytes) + static_cast<int64>(sizeof(RIFF_HEADER));
-        m_nFileBytes = ape_max(m_nFileBytes, nHeaderBytes);
-    }
-    else if (m_nFileBytes == APE_FILE_SIZE_UNDEFINED)
-    {
-        // mark that we need to read the pipe with unknown length
+        // if we're unknown size flag that file as such
         m_bUnknownLengthFile = true;
-        m_nFileBytes = -1;
+    }
+    else
+    {
+        // we used to check the RIFFHeader.nBytes and switch the number to -1 (undefined) in several cases
+        // but I don't think anything was actually using the size, so this was removed 6/12/2025
+
+        // I thought about adding checks that the size of the RIFF header plus the header bytes matched the file size, but David Bryant told me not to because lots of
+        // files have wonky values so just allowing anything is better (6/15/2025). I have checks like this in the AIFF, W64, etc. code.
     }
 
     // read the data type header
@@ -366,6 +315,8 @@ int CWAVInputSource::AnalyzeSource()
     RIFF_CHUNK_HEADER RIFFChunkHeader;
     RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
 
+    RIFFChunkHeader.nChunkBytes = ConvertU32LE(RIFFChunkHeader.nChunkBytes);
+
     while (!(RIFFChunkHeader.cChunkLabel[0] == 'f' && RIFFChunkHeader.cChunkLabel[1] == 'm' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == ' '))
     {
         // check if the header stretches past the end of the file (then we're not valid)
@@ -377,17 +328,26 @@ int CWAVInputSource::AnalyzeSource()
             }
         }
 
-        // move the file pointer to the end of this chunk
+        // we need to read the chunk so CBufferIO objects keep working nicely (seeking is tricky for them)
         CSmartPtr<unsigned char> spExtraChunk(new unsigned char [RIFFChunkHeader.nChunkBytes], true);
         RETURN_ON_ERROR(ReadSafe(m_spIO, spExtraChunk, static_cast<int>(RIFFChunkHeader.nChunkBytes)))
 
         // check again for the data chunk
         RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
+
+        RIFFChunkHeader.nChunkBytes = ConvertU32LE(RIFFChunkHeader.nChunkBytes);
     }
 
     // read the format info
     WAV_FORMAT_HEADER WAVFormatHeader;
     RETURN_ON_ERROR(ReadSafe(m_spIO, &WAVFormatHeader, sizeof(WAVFormatHeader)))
+
+    WAVFormatHeader.nFormatTag = ConvertU16LE(WAVFormatHeader.nFormatTag);
+    WAVFormatHeader.nChannels = ConvertU16LE(WAVFormatHeader.nChannels);
+    WAVFormatHeader.nSamplesPerSecond = ConvertU32LE(WAVFormatHeader.nSamplesPerSecond);
+    WAVFormatHeader.nBytesPerSecond = ConvertU32LE(WAVFormatHeader.nBytesPerSecond);
+    WAVFormatHeader.nBlockAlign = ConvertU16LE(WAVFormatHeader.nBlockAlign);
+    WAVFormatHeader.nBitsPerSample = ConvertU16LE(WAVFormatHeader.nBitsPerSample);
 
     // error check the header to see if we support it
     if ((WAVFormatHeader.nFormatTag != WAVE_FORMAT_PCM) && (WAVFormatHeader.nFormatTag != WAVE_FORMAT_EXTENSIBLE) && (WAVFormatHeader.nFormatTag != WAVE_FORMAT_IEEE_FLOAT))
@@ -399,7 +359,7 @@ int CWAVInputSource::AnalyzeSource()
     #endif
 
     // if the format is an odd bits per sample, just update to a known number -- decoding stores the header so will still be correct (and the block align is that size anyway)
-    const int nSampleBits = 8 * WAVFormatHeader.nBlockAlign / ape_max(1, WAVFormatHeader.nChannels);
+    const int nSampleBits = 8 * WAVFormatHeader.nBlockAlign / APE_MAX(1, WAVFormatHeader.nChannels);
     if (nSampleBits > 0)
         WAVFormatHeader.nBitsPerSample = static_cast<uint16>(((WAVFormatHeader.nBitsPerSample + (nSampleBits - 1)) / nSampleBits) * nSampleBits);
 
@@ -430,41 +390,53 @@ int CWAVInputSource::AnalyzeSource()
             {
                 uint16 cbSize;
                 uint16 nValidBitsPerSample;
-                uint32_t nChannelMask;
+                uint32 nChannelMask;
                 BYTE guidSubFormat[16];
             };
             #pragma pack(pop)
 
             if (nWAVFormatHeaderExtra >= static_cast<APE::int64>(sizeof(CWAVFormatExtra)))
             {
-                const CWAVFormatExtra * pExtra = reinterpret_cast<CWAVFormatExtra *>(spWAVFormatHeaderExtra.GetPtr());
+                CWAVFormatExtra * pExtra = reinterpret_cast<CWAVFormatExtra *>(spWAVFormatHeaderExtra.GetPtr());
 
-                const BYTE guidPCM[16] = { 1, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113 }; // KSDATAFORMAT_SUBTYPE_PCM but that isn't cross-platform
-                const BYTE guidFloat[16] = { 3, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113 }; // KSDATAFORMAT_SUBTYPE_IEEE_FLOAT but that isn't cross-platform
-                const BYTE guidZero[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                if ((memcmp(&pExtra->guidSubFormat, &guidPCM, 16) != 0) &&
-                    (memcmp(&pExtra->guidSubFormat, &guidFloat, 16) != 0) &&
-                    (memcmp(&pExtra->guidSubFormat, &guidZero, 16) != 0))
+                pExtra->cbSize = ConvertU16LE(pExtra->cbSize);
+                pExtra->nValidBitsPerSample = ConvertU16LE(pExtra->nValidBitsPerSample);
+                pExtra->nChannelMask = ConvertU32LE(pExtra->nChannelMask);
+
+                if (pExtra->cbSize == 22) // this can also be zero in which case there is meaningless data there
                 {
-                    // we're not PCM or float, so error
-                    return ERROR_INVALID_INPUT_FILE;
+                    const BYTE guidPCM[16] = { 1, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113 }; // KSDATAFORMAT_SUBTYPE_PCM but that isn't cross-platform
+                    const BYTE guidFloat[16] = { 3, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113 }; // KSDATAFORMAT_SUBTYPE_IEEE_FLOAT but that isn't cross-platform
+                    if ((memcmp(&pExtra->guidSubFormat, &guidPCM, 16) != 0) &&
+                        (memcmp(&pExtra->guidSubFormat, &guidFloat, 16) != 0))
+                    {
+                        // we're not PCM or float, so error
+                        return ERROR_INVALID_INPUT_FILE;
+                    }
+
+                    // switch the format to float if we're the float subtype
+                    if (memcmp(&pExtra->guidSubFormat, &guidFloat, 16) == 0)
+                    {
+                        m_bFloat = true;
+                    }
                 }
-
-                // switch the format to float if we're the float subtype
-                if (memcmp(&pExtra->guidSubFormat, &guidFloat, 16) == 0)
+                else
                 {
-                    m_bFloat = true;
+                    // size is undefined so don't look at it
                 }
             }
         }
     }
 
-    // if we're float, force the size to 32-bit (we found some files where this wasn't true)
-    if (m_bFloat)
-        FillWaveFormatEx(&m_wfeSource, static_cast<int>(m_wfeSource.wFormatTag), static_cast<int>(m_wfeSource.nSamplesPerSec), static_cast<int>(32), static_cast<int>(m_wfeSource.nChannels));
+    // check that float data is 32-bits per sample (we found files where this was not true and accepted them for a while, but now reject them like WavPack)
+    // files that are 64-bit double hit this code so it's proper to reject the files
+    if (m_bFloat && (WAVFormatHeader.nBitsPerSample != 32))
+        return ERROR_INVALID_INPUT_FILE;
 
     // find the data chunk
     RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
+
+    RIFFChunkHeader.nChunkBytes = ConvertU32LE(RIFFChunkHeader.nChunkBytes);
 
     while (!(RIFFChunkHeader.cChunkLabel[0] == 'd' && RIFFChunkHeader.cChunkLabel[1] == 'a' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == 'a'))
     {
@@ -481,6 +453,8 @@ int CWAVInputSource::AnalyzeSource()
 
         // check again for the data chunk
         RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
+
+        RIFFChunkHeader.nChunkBytes = ConvertU32LE(RIFFChunkHeader.nChunkBytes);
     }
 
     // we're at the data block
@@ -530,6 +504,11 @@ int CWAVInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlocks
     if (nReadResult != ERROR_SUCCESS)
         return nReadResult;
 
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    if (m_wfeSource.wBitsPerSample >= 16)
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#endif
+
     if (pBlocksRetrieved) *pBlocksRetrieved = static_cast<int>(nBytesRead / m_wfeSource.nBlockAlign);
 
     return ERROR_SUCCESS;
@@ -548,7 +527,7 @@ int CWAVInputSource::GetHeaderData(unsigned char * pBuffer)
         if (pFileBuffer != APE_NULL)
         {
             // we have the data already cached, so no need to seek and read
-            memcpy(pBuffer, pFileBuffer, ape_min(static_cast<size_t>(m_nHeaderBytes), static_cast<size_t>(nFileBufferBytes)));
+            memcpy(pBuffer, pFileBuffer, APE_MIN(static_cast<size_t>(m_nHeaderBytes), static_cast<size_t>(nFileBufferBytes)));
         }
         else
         {
@@ -654,10 +633,10 @@ int CAIFFInputSource::AnalyzeSource()
     // get the RIFF header
     RIFF_HEADER RIFFHeader;
     RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFHeader, sizeof(RIFFHeader)))
-    RIFFHeader.nBytes = Swap4Bytes(RIFFHeader.nBytes);
+    RIFFHeader.nBytes = ConvertU32BE(RIFFHeader.nBytes);
 
     // make sure the RIFF header is valid
-    if (!(RIFFHeader.cRIFF[0] == 'F' && RIFFHeader.cRIFF[1] == 'O' && RIFFHeader.cRIFF[2] == 'R' && RIFFHeader.cRIFF[3] == 'M'))
+    if (memcmp(RIFFHeader.cRIFF, "FORM", 4) != 0)
         return ERROR_INVALID_INPUT_FILE;
     if (static_cast<int64>(RIFFHeader.nBytes) != (m_nFileBytes - static_cast<int64>(sizeof(RIFF_HEADER))))
         return ERROR_INVALID_INPUT_FILE;
@@ -667,25 +646,18 @@ int CAIFFInputSource::AnalyzeSource()
     struct COMM_HEADER
     {
         int16 nChannels;
-        uint32_t nFrames;
+        uint32 nFrames;
         int16 nSampleSize;
-        uint16_t nSampleRateExponent;
-        uint64_t nSampleRateMantissa;
+        uint16 nSampleRateExponent;
+        uint64 nSampleRateMantissa;
     };
     #pragma pack(pop)
 
     // read AIFF header and only support AIFF
     char cAIFF[4] = { 0, 0, 0, 0 };
     RETURN_ON_ERROR(ReadSafe(m_spIO, &cAIFF[0], sizeof(cAIFF)))
-    if ((cAIFF[0] == 'A') && (cAIFF[1] == 'I') && (cAIFF[2] == 'F') && (cAIFF[3] == 'F'))
-    {
-        // AIFF
-    }
-    else if ((cAIFF[0] == 'A') && (cAIFF[1] == 'I') && (cAIFF[2] == 'F') && (cAIFF[3] == 'C'))
-    {
-        // AIFC
-    }
-    else
+    if (memcmp(cAIFF, "AIFF", 4) != 0 &&
+        memcmp(cAIFF, "AIFC", 4) != 0)
     {
         // unknown type
         return ERROR_INVALID_INPUT_FILE;
@@ -696,7 +668,7 @@ int CAIFFInputSource::AnalyzeSource()
     struct CHUNKS
     {
         char cChunkName[4];
-        uint32_t nChunkBytes;
+        uint32 nChunkBytes;
     };
     #pragma pack(pop)
     COMM_HEADER Common; APE_CLEAR(Common);
@@ -704,11 +676,11 @@ int CAIFFInputSource::AnalyzeSource()
     {
         CHUNKS Chunk; APE_CLEAR(Chunk);
         RETURN_ON_ERROR(ReadSafe(m_spIO, &Chunk, sizeof(Chunk)))
-        Chunk.nChunkBytes = Swap4Bytes(Chunk.nChunkBytes);
+        Chunk.nChunkBytes = ConvertU32BE(Chunk.nChunkBytes);
         Chunk.nChunkBytes = (Chunk.nChunkBytes + 1) & static_cast<uint32_t>(~1L);
         bool bSeekToNextChunk = true;
 
-        if ((Chunk.cChunkName[0] == 'C') && (Chunk.cChunkName[1] == 'O') && (Chunk.cChunkName[2] == 'M') && (Chunk.cChunkName[3] == 'M'))
+        if (memcmp(Chunk.cChunkName, "COMM", 4) == 0)
         {
             // read the common chunk
 
@@ -718,13 +690,13 @@ int CAIFFInputSource::AnalyzeSource()
             RETURN_ON_ERROR(ReadSafe(m_spIO, &Common, sizeof(Common)))
             bSeekToNextChunk = false; // don't seek since we already read
 
-            Common.nChannels = static_cast<int16>(Swap2Bytes(Common.nChannels));
-            Common.nFrames = static_cast<uint32_t>(static_cast<uint32_t>(Swap4Bytes(Common.nFrames)));
-            Common.nSampleSize = static_cast<int16>(Swap2Bytes(Common.nSampleSize));
-            Common.nSampleRateExponent = static_cast<uint16>(Swap2Bytes(Common.nSampleRateExponent));
-            Common.nSampleRateMantissa = Swap8Bytes(Common.nSampleRateMantissa);
+            Common.nChannels = ConvertI16BE(Common.nChannels);
+            Common.nFrames = ConvertU32BE(Common.nFrames);
+            Common.nSampleSize = ConvertI16BE(Common.nSampleSize);
+            Common.nSampleRateExponent = ConvertU16BE(Common.nSampleRateExponent);
+            Common.nSampleRateMantissa = ConvertU64BE(Common.nSampleRateMantissa);
             const double dSampleRate = GetExtendedDouble(Common.nSampleRateExponent, Common.nSampleRateMantissa);
-            const uint32_t nSampleRate = static_cast<uint32_t>(dSampleRate);
+            const uint32 nSampleRate = static_cast<uint32>(dSampleRate);
             m_bFloat = false;
 
             // skip rest of header
@@ -739,24 +711,15 @@ int CAIFFInputSource::AnalyzeSource()
                 m_bLittleEndian = false;
                 if (nExtraBytes >= 4)
                 {
-                    if ((spBuffer[0] == 'N') &&
-                        (spBuffer[1] == 'O') &&
-                        (spBuffer[2] == 'N') &&
-                        (spBuffer[3] == 'E'))
+                    if (memcmp(spBuffer, "NONE", 4) == 0)
                     {
                         // this means we're a supported file
                     }
-                    else if ((spBuffer[0] == 's') &&
-                        (spBuffer[1] == 'o') &&
-                        (spBuffer[2] == 'w') &&
-                        (spBuffer[3] == 't'))
+                    else if (memcmp(spBuffer, "sowt", 4) == 0)
                     {
                         m_bLittleEndian = true;
                     }
-                    else if ((spBuffer[0] == 'f') &&
-                        (spBuffer[1] == 'l') &&
-                        (spBuffer[2] == '3') &&
-                        (spBuffer[3] == '2'))
+                    else if ((memcmp(spBuffer, "fl32", 4) == 0) || (memcmp(spBuffer, "FL32", 4) == 0))
                     {
                         m_bFloat = true;
                         #ifndef APE_SUPPORT_FLOAT_COMPRESSION
@@ -775,13 +738,13 @@ int CAIFFInputSource::AnalyzeSource()
             // copy the format information to the WAVEFORMATEX passed in
             FillWaveFormatEx(&m_wfeSource, m_bFloat ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM, static_cast<int>(nSampleRate), static_cast<int>(Common.nSampleSize), static_cast<int>(Common.nChannels));
         }
-        else if ((Chunk.cChunkName[0] == 'S') && (Chunk.cChunkName[1] == 'S') && (Chunk.cChunkName[2] == 'N') && (Chunk.cChunkName[3] == 'D'))
+        else if (memcmp(Chunk.cChunkName, "SSND", 4) == 0)
         {
             // read the SSND header
             struct SSNDHeader
             {
-                uint32_t offset;
-                uint32_t blocksize;
+                uint32 offset;
+                uint32 blocksize;
             };
             SSNDHeader Header;
             RETURN_ON_ERROR(ReadSafe(m_spIO, &Header, sizeof(Header)))
@@ -825,8 +788,13 @@ int CAIFFInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlock
 
     if (m_wfeSource.wBitsPerSample == 8)
         Convert8BitSignedToUnsigned(pBuffer, m_wfeSource.nChannels, nBlocks);
+#if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
     else if (!m_bLittleEndian)
-        FlipEndian(pBuffer, m_wfeSource.wBitsPerSample, m_wfeSource.nChannels, nBlocks);
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#else
+    else if (m_bLittleEndian)
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#endif
 
     if (pBlocksRetrieved) *pBlocksRetrieved = static_cast<int>(nBytesRead / m_wfeSource.nBlockAlign);
 
@@ -867,8 +835,8 @@ CW64InputSource - wraps working with W64 files
 **************************************************************************************************/
 /*static*/ bool CW64InputSource::GetHeaderMatches(BYTE aryHeader[64])
 {
-    static const GUID guidRIFF = { 0x66666972, 0x912E, 0x11CF, { 0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00 } };
-    static const GUID guidWAVE = { 0x65766177, 0xACF3, 0x11D3, { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
+    static const GUID guidRIFF = { ConvertU32LE(0x66666972), ConvertU16LE(0x912E), ConvertU16LE(0x11CF), { 0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00 } };
+    static const GUID guidWAVE = { ConvertU32LE(0x65766177), ConvertU16LE(0xACF3), ConvertU16LE(0x11D3), { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
     bool bW64 = (memcmp(aryHeader, &guidRIFF, sizeof(guidRIFF)) == 0);
     if (bW64)
     {
@@ -921,10 +889,10 @@ CW64InputSource::~CW64InputSource()
 int CW64InputSource::AnalyzeSource()
 {
     // chunk identifiers
-    static const GUID guidRIFF = { 0x66666972, 0x912E, 0x11CF, { 0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00 } };
-    static const GUID guidWAVE = { 0x65766177, 0xACF3, 0x11D3, { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
-    static const GUID guidDATA = { 0x61746164, 0xACF3, 0x11D3, { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
-    static const GUID guidFMT = { 0x20746D66, 0xACF3, 0x11D3, { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
+    static const GUID guidRIFF = { ConvertU32LE(0x66666972), ConvertU16LE(0x912E), ConvertU16LE(0x11CF), { 0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00 } };
+    static const GUID guidWAVE = { ConvertU32LE(0x65766177), ConvertU16LE(0xACF3), ConvertU16LE(0x11D3), { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
+    static const GUID guidDATA = { ConvertU32LE(0x61746164), ConvertU16LE(0xACF3), ConvertU16LE(0x11D3), { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
+    static const GUID guidFMT = { ConvertU32LE(0x20746D66), ConvertU16LE(0xACF3), ConvertU16LE(0x11D3), { 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A } };
     const bool bReadMetadataChunks = false;
 
     // read the riff header
@@ -935,6 +903,9 @@ int CW64InputSource::AnalyzeSource()
     m_nFileBytes = m_spIO->GetSize();
 
     m_spIO->Read(&RIFFHeader, sizeof(RIFFHeader), &nBytesRead);
+
+    RIFFHeader.nBytes = ConvertU64LE(RIFFHeader.nBytes);
+
     if ((memcmp(&RIFFHeader.guidIdentifier, &guidRIFF, sizeof(GUID)) == 0) && (RIFFHeader.nBytes == static_cast<uint64>(m_nFileBytes)))
     {
         // read and verify the wave data type header
@@ -955,6 +926,8 @@ int CW64InputSource::AnalyzeSource()
                 if (nBytesRead < sizeof(Header))
                     break;
 
+                Header.nBytes = ConvertU64LE(Header.nBytes);
+
                 // get / check chunk size
                 const int64 nChunkRemainingBytes = static_cast<int64>(Header.nBytes) - static_cast<int64>(sizeof(Header));
                 if ((m_spIO->GetPosition() + nChunkRemainingBytes) > m_nFileBytes)
@@ -969,6 +942,13 @@ int CW64InputSource::AnalyzeSource()
                     m_spIO->Read(&Data, sizeof(Data), &nBytesRead);
                     if (nBytesRead != sizeof(Data))
                         break;
+
+                    Data.nFormatTag = ConvertU16LE(Data.nFormatTag);
+                    Data.nChannels = ConvertU16LE(Data.nChannels);
+                    Data.nSamplesPerSecond = ConvertU32LE(Data.nSamplesPerSecond);
+                    Data.nAverageBytesPerSecond = ConvertU32LE(Data.nAverageBytesPerSecond);
+                    Data.nBlockAlign = ConvertU16LE(Data.nBlockAlign);
+                    Data.nBitsPerSample = ConvertU16LE(Data.nBitsPerSample);
 
                     // skip the rest
                     m_spIO->Seek(Align(nChunkRemainingBytes, 8) - static_cast<int64>(sizeof(Data)), SeekFileCurrent);
@@ -1029,7 +1009,7 @@ int CW64InputSource::AnalyzeSource()
     if (bDataChunkRead && bFormatChunkRead)
     {
         // should error check this maybe
-        m_nDataBytes = ape_min(m_nDataBytes, m_nFileBytes - m_nHeaderBytes);
+        m_nDataBytes = APE_MIN(m_nDataBytes, m_nFileBytes - m_nHeaderBytes);
 
         // get terminating bytes
         m_nTerminatingBytes = static_cast<uint32_t>(m_nFileBytes - m_nDataBytes - m_nHeaderBytes);
@@ -1051,6 +1031,11 @@ int CW64InputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlocks
 
     if (m_spIO->Read(pBuffer, nBytes, &nBytesRead) != ERROR_SUCCESS)
         return ERROR_IO_READ;
+
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    if (m_wfeSource.wBitsPerSample >= 16)
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#endif
 
     if (pBlocksRetrieved) *pBlocksRetrieved = static_cast<int>(nBytesRead / m_wfeSource.nBlockAlign);
 
@@ -1154,19 +1139,24 @@ int CSNDInputSource::AnalyzeSource(int32 * pFlags)
         bool bMagicNumberValid = false;
         if (memcmp(&Header.m_nMagicNumber, "dns.", 4) == 0)
         {
-            // already little-endian
+            // little-endian
             bMagicNumberValid = true;
+            Header.m_nDataOffset = ConvertU32LE(Header.m_nDataOffset);
+            Header.m_nDataSize = ConvertU32LE(Header.m_nDataSize);
+            Header.m_nEncoding = ConvertU32LE(Header.m_nEncoding);
+            Header.m_nSampleRate = ConvertU32LE(Header.m_nSampleRate);
+            Header.m_nChannels = ConvertU32LE(Header.m_nChannels);
         }
         else if (memcmp(&Header.m_nMagicNumber, ".snd", 4) == 0)
         {
-            // big-endian (so reverse)
+            // big-endian
             bMagicNumberValid = true;
             m_bBigEndian = true;
-            Header.m_nDataOffset = FlipByteOrder32(Header.m_nDataOffset);
-            Header.m_nDataSize = FlipByteOrder32(Header.m_nDataSize);
-            Header.m_nEncoding = FlipByteOrder32(Header.m_nEncoding);
-            Header.m_nSampleRate = FlipByteOrder32(Header.m_nSampleRate);
-            Header.m_nChannels = FlipByteOrder32(Header.m_nChannels);
+            Header.m_nDataOffset = ConvertU32BE(Header.m_nDataOffset);
+            Header.m_nDataSize = ConvertU32BE(Header.m_nDataSize);
+            Header.m_nEncoding = ConvertU32BE(Header.m_nEncoding);
+            Header.m_nSampleRate = ConvertU32BE(Header.m_nSampleRate);
+            Header.m_nChannels = ConvertU32BE(Header.m_nChannels);
         }
 
         if (bMagicNumberValid &&
@@ -1177,7 +1167,7 @@ int CSNDInputSource::AnalyzeSource(int32 * pFlags)
             m_nHeaderBytes = Header.m_nDataOffset;
             m_nDataBytes = m_nFileBytes - m_nHeaderBytes;
             if (Header.m_nDataSize > 0)
-                m_nDataBytes = ape_min(static_cast<int64>(Header.m_nDataSize), m_nDataBytes);
+                m_nDataBytes = APE_MIN(static_cast<int64>(Header.m_nDataSize), m_nDataBytes);
             m_nTerminatingBytes = static_cast<uint32>(m_nFileBytes - m_nHeaderBytes - m_nDataBytes);
 
             // set format
@@ -1254,11 +1244,6 @@ int CSNDInputSource::AnalyzeSource(int32 * pFlags)
     return bIsValid ? ERROR_SUCCESS : ERROR_INVALID_INPUT_FILE;
 }
 
-uint32 CSNDInputSource::FlipByteOrder32(uint32 nValue)
-{
-    return (((nValue >> 0) & 0xFF) << 24) | (((nValue >> 8) & 0xFF) << 16) | (((nValue >> 16) & 0xFF) << 8) | (((nValue >> 24) & 0xFF) << 0);
-}
-
 int CSNDInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlocksRetrieved)
 {
     if (!m_bIsValid) return ERROR_UNDEFINED;
@@ -1271,8 +1256,13 @@ int CSNDInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlocks
 
     if (m_wfeSource.wBitsPerSample == 8)
         Convert8BitSignedToUnsigned(pBuffer, m_wfeSource.nChannels, nBlocks);
+#if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
     else if (m_bBigEndian)
-        FlipEndian(pBuffer, m_wfeSource.wBitsPerSample, m_wfeSource.nChannels, nBlocks);
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#else
+    else if (!m_bBigEndian)
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#endif
 
     if (pBlocksRetrieved) *pBlocksRetrieved = static_cast<int>(nBytesRead / m_wfeSource.nBlockAlign);
 
@@ -1302,8 +1292,8 @@ struct APE_CAFFileHeader {
 {
     APE_CAFFileHeader Header;
     memcpy(&Header, &aryHeader[0], sizeof(APE_CAFFileHeader));
-    Header.mFileVersion = static_cast<uint16>(Swap2Bytes(Header.mFileVersion));
-    Header.mFileFlags = static_cast<uint16>(Swap2Bytes(Header.mFileFlags));
+    Header.mFileVersion = static_cast<uint16>(ConvertU16BE(Header.mFileVersion));
+    Header.mFileFlags = static_cast<uint16>(ConvertU16BE(Header.mFileFlags));
 
     if ((Header.cFileType[0] != 'c') ||
         (Header.cFileType[1] != 'a') ||
@@ -1366,8 +1356,8 @@ int CCAFInputSource::AnalyzeSource()
     // get the header
     APE_CAFFileHeader Header;
     RETURN_ON_ERROR(ReadSafe(m_spIO, &Header, sizeof(Header)))
-    Header.mFileVersion = static_cast<uint16>(Swap2Bytes(Header.mFileVersion));
-    Header.mFileFlags = static_cast<uint16>(Swap2Bytes(Header.mFileFlags));
+    Header.mFileVersion = static_cast<uint16>(ConvertU16BE(Header.mFileVersion));
+    Header.mFileFlags = static_cast<uint16>(ConvertU16BE(Header.mFileFlags));
 
     // check the header
     if ((Header.cFileType[0] != 'c') ||
@@ -1385,11 +1375,13 @@ int CCAFInputSource::AnalyzeSource()
 
     // read chunks
     #pragma pack(push, 1)
-    struct APE_CAFChunkHeader {
+    struct APE_CAFChunkHeader
+    {
         char cChunkType[4];
         uint64 mChunkSize;
     };
-    struct APE_CAFAudioFormat {
+    struct APE_CAFAudioFormat
+    {
         union
         {
             uint64 nSampleRate;
@@ -1402,7 +1394,8 @@ int CCAFInputSource::AnalyzeSource()
         uint32_t nChannelsPerFrame;
         uint32_t nBitsPerChannel;
     };
-    enum {
+    enum
+    {
         APE_kCAFLinearPCMFormatFlagIsFloat = (1L << 0),
         APE_kCAFLinearPCMFormatFlagIsLittleEndian = (1L << 1)
     };
@@ -1415,7 +1408,7 @@ int CCAFInputSource::AnalyzeSource()
         if (ReadSafe(m_spIO, &Chunk, sizeof(Chunk)) != ERROR_SUCCESS)
             return ERROR_INVALID_INPUT_FILE; // we read past the last chunk and didn't find the necessary chunks
 
-        Chunk.mChunkSize = Swap8Bytes(Chunk.mChunkSize);
+        Chunk.mChunkSize = ConvertU64BE(Chunk.mChunkSize);
 
         if ((Chunk.cChunkType[0] == 'd') &&
             (Chunk.cChunkType[1] == 'e') &&
@@ -1435,10 +1428,10 @@ int CCAFInputSource::AnalyzeSource()
                     return ERROR_INVALID_INPUT_FILE;
                 }
 
-                AudioFormat.nSampleRate = Swap8Bytes(AudioFormat.nSampleRate);
-                AudioFormat.nBitsPerChannel = Swap4Bytes(AudioFormat.nBitsPerChannel);
-                AudioFormat.nChannelsPerFrame = Swap4Bytes(AudioFormat.nChannelsPerFrame);
-                AudioFormat.nFormatFlags = Swap4Bytes(AudioFormat.nFormatFlags);
+                AudioFormat.nSampleRate = ConvertU64BE(AudioFormat.nSampleRate);
+                AudioFormat.nBitsPerChannel = ConvertU32BE(AudioFormat.nBitsPerChannel);
+                AudioFormat.nChannelsPerFrame = ConvertU32BE(AudioFormat.nChannelsPerFrame);
+                AudioFormat.nFormatFlags = ConvertU32BE(AudioFormat.nFormatFlags);
 
                 // only support 8-bit, 16-bit, and 24-bit, maybe 32-bit
                 bool bFloat = false;
@@ -1517,8 +1510,13 @@ int CCAFInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlocks
     // read data
     if (m_wfeSource.wBitsPerSample == 8)
         Convert8BitSignedToUnsigned(pBuffer, m_wfeSource.nChannels, nBlocks);
+#if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
     else if (!m_bLittleEndian)
-        FlipEndian(pBuffer, m_wfeSource.wBitsPerSample, m_wfeSource.nChannels, nBlocks);
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#else
+    else if (m_bLittleEndian)
+        SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
+#endif
 
     if (pBlocksRetrieved) *pBlocksRetrieved = static_cast<int>(nBytesRead / m_wfeSource.nBlockAlign);
 

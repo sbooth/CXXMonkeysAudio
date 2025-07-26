@@ -115,21 +115,13 @@ template <class INTTYPE, class DATATYPE> int64 CPredictorCompressNormal<INTTYPE,
     }
 
     // adapt
-    m_rbAdapt[0] = (m_rbPrediction[-1]) ? ((m_rbPrediction[-1] >> 30) & 2) - 1 : 0;
+    m_rbAdapt[ 0] = (m_rbPrediction[-1]) ? ((m_rbPrediction[-1] >> 30) & 2) - 1 : 0;
     m_rbAdapt[-1] = (m_rbPrediction[-2]) ? ((m_rbPrediction[-2] >> 30) & 2) - 1 : 0;
     m_rbAdapt[-4] = (m_rbPrediction[-5]) ? ((m_rbPrediction[-5] >> 30) & 2) - 1 : 0;
     m_rbAdapt[-5] = (m_rbPrediction[-6]) ? ((m_rbPrediction[-6] >> 30) & 2) - 1 : 0;
 
-    if (nOutput > 0)
-    {
-        INTTYPE * pM = &paryM[-8]; INTTYPE * pAdapt = &m_rbAdapt[-8];
-        EXPAND_9_TIMES(*pM++ -= *pAdapt++;)
-    }
-    else if (nOutput < 0)
-    {
-        INTTYPE * pM = &paryM[-8]; INTTYPE * pAdapt = &m_rbAdapt[-8];
-        EXPAND_9_TIMES(*pM++ += *pAdapt++;)
-    }
+    INTTYPE * pM = &paryM[-8]; INTTYPE * pAdapt = &m_rbAdapt[-8];
+    EXPAND_9_TIMES(*pM++ += *pAdapt++ * ((nOutput < 0) - (nOutput > 0));)
 
     // stage 3: NNFilters
     if (m_spNNFilter)
@@ -245,20 +237,10 @@ int CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
 
     m_pInputBuffer[0] = nInput32 + (((p1 * m_aryM[0]) + (p2 * m_aryM[1]) + (p3 * m_aryM[2]) + (p4 * m_aryM[3])) >> 9);
 
-    if (nInput32 > 0)
-    {
-        m_aryM[0] -= ((p1 >> 30) & 2) - 1;
-        m_aryM[1] -= ((p2 >> 30) & 2) - 1;
-        m_aryM[2] -= ((p3 >> 30) & 2) - 1;
-        m_aryM[3] -= ((p4 >> 30) & 2) - 1;
-    }
-    else if (nInput32 < 0)
-    {
-        m_aryM[0] += ((p1 >> 30) & 2) - 1;
-        m_aryM[1] += ((p2 >> 30) & 2) - 1;
-        m_aryM[2] += ((p3 >> 30) & 2) - 1;
-        m_aryM[3] += ((p4 >> 30) & 2) - 1;
-    }
+    m_aryM[0] += (((p1 >> 30) & 2) - 1) * ((nInput32 < 0) - (nInput32 > 0));
+    m_aryM[1] += (((p2 >> 30) & 2) - 1) * ((nInput32 < 0) - (nInput32 > 0));
+    m_aryM[2] += (((p3 >> 30) & 2) - 1) * ((nInput32 < 0) - (nInput32 > 0));
+    m_aryM[3] += (((p4 >> 30) & 2) - 1) * ((nInput32 < 0) - (nInput32 > 0));
 
     const int nResult = m_pInputBuffer[0] + ((m_nLastValue * 31) >> 5);
     m_nLastValue = nResult;
@@ -406,38 +388,22 @@ template <class INTTYPE, class DATATYPE> int CPredictorDecompress3950toCurrent<I
             nCurrentA = nA + static_cast<INTTYPE>((static_cast<int>(nPredictionA) + (static_cast<int>(nPredictionB) >> 1)) >> 10);
     }
 
-    m_rbAdaptA[0] = (m_rbPredictionA[0]) ? ((m_rbPredictionA[0] >> 30) & 2) - 1 : 0;
+    m_rbAdaptA[ 0] = (m_rbPredictionA[ 0]) ? ((m_rbPredictionA[ 0] >> 30) & 2) - 1 : 0;
     m_rbAdaptA[-1] = (m_rbPredictionA[-1]) ? ((m_rbPredictionA[-1] >> 30) & 2) - 1 : 0;
 
-    m_rbAdaptB[0] = (m_rbPredictionB[0]) ? ((m_rbPredictionB[0] >> 30) & 2) - 1 : 0;
+    m_rbAdaptB[ 0] = (m_rbPredictionB[ 0]) ? ((m_rbPredictionB[ 0] >> 30) & 2) - 1 : 0;
     m_rbAdaptB[-1] = (m_rbPredictionB[-1]) ? ((m_rbPredictionB[-1] >> 30) & 2) - 1 : 0;
 
-    if (nA > 0)
-    {
-        m_aryMA[0] -= m_rbAdaptA[0];
-        m_aryMA[1] -= m_rbAdaptA[-1];
-        m_aryMA[2] -= m_rbAdaptA[-2];
-        m_aryMA[3] -= m_rbAdaptA[-3];
+    m_aryMA[0] += m_rbAdaptA[ 0] * ((nA < 0) - (nA > 0));
+    m_aryMA[1] += m_rbAdaptA[-1] * ((nA < 0) - (nA > 0));
+    m_aryMA[2] += m_rbAdaptA[-2] * ((nA < 0) - (nA > 0));
+    m_aryMA[3] += m_rbAdaptA[-3] * ((nA < 0) - (nA > 0));
 
-        m_aryMB[0] -= m_rbAdaptB[0];
-        m_aryMB[1] -= m_rbAdaptB[-1];
-        m_aryMB[2] -= m_rbAdaptB[-2];
-        m_aryMB[3] -= m_rbAdaptB[-3];
-        m_aryMB[4] -= m_rbAdaptB[-4];
-    }
-    else if (nA < 0)
-    {
-        m_aryMA[0] += m_rbAdaptA[0];
-        m_aryMA[1] += m_rbAdaptA[-1];
-        m_aryMA[2] += m_rbAdaptA[-2];
-        m_aryMA[3] += m_rbAdaptA[-3];
-
-        m_aryMB[0] += m_rbAdaptB[0];
-        m_aryMB[1] += m_rbAdaptB[-1];
-        m_aryMB[2] += m_rbAdaptB[-2];
-        m_aryMB[3] += m_rbAdaptB[-3];
-        m_aryMB[4] += m_rbAdaptB[-4];
-    }
+    m_aryMB[0] += m_rbAdaptB[ 0] * ((nA < 0) - (nA > 0));
+    m_aryMB[1] += m_rbAdaptB[-1] * ((nA < 0) - (nA > 0));
+    m_aryMB[2] += m_rbAdaptB[-2] * ((nA < 0) - (nA > 0));
+    m_aryMB[3] += m_rbAdaptB[-3] * ((nA < 0) - (nA > 0));
+    m_aryMB[4] += m_rbAdaptB[-4] * ((nA < 0) - (nA > 0));
 
     const int nResult = m_Stage1FilterA.Decompress(nCurrentA);
     m_nLastValueA = nCurrentA;

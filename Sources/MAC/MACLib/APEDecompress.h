@@ -10,12 +10,11 @@ class CAPEDecompressCore;
 class CAPEInfo;
 class IPredictorDecompress;
 
-#pragma pack(push, 1)
-
 class CAPEDecompress : public IAPEDecompress
 {
 public:
     CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nStartBlock = -1, int64 nFinishBlock = -1);
+    ~CAPEDecompress();
 
     // configuration
     int SetNumberOfThreads(int nThreads) APE_OVERRIDE;
@@ -55,7 +54,5 @@ protected:
     // decoding buffer
     CCircleBuffer m_cbFrameBuffer;
 };
-
-#pragma pack(pop)
 
 }

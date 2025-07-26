@@ -85,7 +85,7 @@ int CWholeFileIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int *
     *pBytesRead = 0; // reset
 
     const int64 nBytesLeft = GetSize() - m_nWholeFilePointer;
-    nBytesToRead = ape_min(static_cast<unsigned int> (nBytesLeft), nBytesToRead);
+    nBytesToRead = APE_MIN(static_cast<unsigned int> (nBytesLeft), nBytesToRead);
     memcpy(pBuffer, &m_spWholeFile[m_nWholeFilePointer], nBytesToRead);
     m_nWholeFilePointer += nBytesToRead;
     *pBytesRead = nBytesToRead;

@@ -25,7 +25,7 @@ void CMACProgressHelper::UpdateProgress(int64 nCurrentStep, bool bForceUpdate)
         m_nCurrentStep = nCurrentStep;
 
     // figure the percentage done
-    const double dPercentageDone = static_cast<double>(m_nCurrentStep) / static_cast<double>(ape_max(m_nTotalSteps, 1));
+    const double dPercentageDone = static_cast<double>(m_nCurrentStep) / static_cast<double>(APE_MAX(m_nTotalSteps, 1));
     int nPercentageDone = static_cast<int>((dPercentageDone * 1000 * 100));
     if (nPercentageDone > 100000) nPercentageDone = 100000;
 

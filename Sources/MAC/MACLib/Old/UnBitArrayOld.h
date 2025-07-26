@@ -6,8 +6,7 @@ namespace APE
 {
 
 class IAPEDecompress;
-
-#pragma pack(push, 1)
+const uint32 Powers_of_Two[32] = { 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U };
 
 /**************************************************************************************************
 CUnBitArrayOld
@@ -36,9 +35,17 @@ private:
     uint32 m_nRefillBitThreshold;
 
     // functions
-    __forceinline int DecodeValueNew(bool bCapOverflow);
+    inline int DecodeValueNew(bool bCapOverflow);
     uint32 GetBitsRemaining() const;
-    __forceinline uint32 Get_K(uint32 x);
+    __forceinline uint32 Get_K(uint32 x)
+    {
+        if (x == 0)
+            return 0;
+
+        uint32 k = 0;
+        while (x >= Powers_of_Two[++k]) {}
+        return k;
+    }
 };
 
 /**************************************************************************************************
@@ -67,7 +74,5 @@ private:
     uint32 RangeDecodeFastWithUpdate(int nShift);
     void GenerateArrayRange(int * pOutputArray, int nElements);
 };
-
-#pragma pack(pop)
 
 }

@@ -45,7 +45,7 @@
 
 //// Binary/Low-Level-IO ///////////////////////////////////////////
 //
-// All file I/O is basicly handled via an ANSI file pointer (type: FILE*) in
+// All file I/O is basicly handled via an ANSI file pointer (type: FILE *) in
 // FILEIO-Mode 1 and via a POSIX file descriptor (type: int) in
 // FILEIO-Mode 2 and 3.
 //

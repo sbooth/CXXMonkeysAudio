@@ -5,8 +5,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 /**************************************************************************************************
 CInputSource - base input format class (allows multiple format support)
 **************************************************************************************************/
@@ -35,7 +33,6 @@ protected:
     int GetHeaderDataHelper(bool bIsValid, unsigned char * pBuffer, uint32 nHeaderBytes, CIO * pIO);
     int GetTerminatingDataHelper(bool bIsValid, unsigned char * pBuffer, uint32 nTerminatingBytes, CIO * pIO);
     void Convert8BitSignedToUnsigned(unsigned char * pBuffer, int nChannels, int nBlocks);
-    void FlipEndian(unsigned char * pBuffer, int nBitsPerSample, int nChannels, int nBlocks);
 };
 
 /**************************************************************************************************
@@ -196,7 +193,6 @@ public:
 
 private:
     int AnalyzeSource(int32 * pFlags);
-    uint32 FlipByteOrder32(uint32 nValue);
 
     CSmartPtr<CIO> m_spIO;
     uint32 m_nHeaderBytes;
@@ -246,7 +242,5 @@ private:
     bool m_bLittleEndian;
     bool m_bIsValid;
 };
-
-#pragma pack(pop)
 
 }

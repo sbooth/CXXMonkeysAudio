@@ -3,8 +3,6 @@
 namespace APE
 {
 
-#pragma pack(push, 1)
-
 class CCircleBuffer
 {
 public:
@@ -20,7 +18,6 @@ public:
     uint32 MaxGet() const;
 
     // direct writing
-#ifdef APE_ENABLE_CIRCLE_BUFFER_WRITE
     __forceinline unsigned char * GetDirectWritePointer()
     {
         // return a pointer to the tail -- note that it will always be safe to write
@@ -40,10 +37,9 @@ public:
             m_nTail = 0;
         }
     }
-#endif
 
     // update CRC for last nBytes bytes
-    uint32 UpdateCRC(uint32 nCRC, uint32 nBytes);
+    uint32 UpdateCRC(uint32 nCRC, uint32 nBytesPerBlock, uint32 nBlocks);
 
     // get data
     uint32 Get(unsigned char * pBuffer, uint32 nBytes);
@@ -61,7 +57,5 @@ private:
     uint32 m_nTail;
     CSmartPtr<unsigned char> m_spBuffer;
 };
-
-#pragma pack(pop)
 
 }

@@ -10,8 +10,6 @@ enum SeekMethod
     SeekFileEnd = 2
 };
 
-#pragma pack(push, 1)
-
 class CIO
 {
 public:
@@ -44,7 +42,5 @@ public:
 };
 
 CIO * CreateCIO();
-
-#pragma pack(pop)
 
 }

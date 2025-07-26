@@ -9,8 +9,6 @@ namespace APE
 
 class IAPEProgressCallback;
 
-#pragma pack(push, 1)
-
 class CMACProgressHelper
 {
 public:
@@ -27,7 +25,5 @@ private:
     int m_nLastCallbackFiredPercentageDone;
     IAPEProgressCallback * m_pProgressCallback;
 };
-
-#pragma pack(pop)
 
 }

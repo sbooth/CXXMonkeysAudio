@@ -14,7 +14,6 @@ namespace APE
 {
 
 void AdaptSSE2(short * pM, const short * pAdapt, int32 nDirection, int nOrder);
-void AdaptSSE2(int * pM, const int * pAdapt, int64 nDirection, int nOrder);
 
 int32 CalculateDotProductSSE2(const short * pA, const short * pB, int nOrder);
 
@@ -28,6 +27,36 @@ bool GetSSE41Available()
 }
 
 #ifdef APE_USE_SSE41_INTRINSICS
+
+static void AdaptSSE41(short * pM, const short * pAdapt, int32 nDirection, int nOrder)
+{
+    return AdaptSSE2(pM, pAdapt, nDirection, nOrder);
+}
+
+#define ADAPT_SSE41_SIMD_INT                                                                     \
+{                                                                                                \
+    const __m128i sseM = _mm_load_si128(reinterpret_cast<const __m128i *>(&pM[z + n]));          \
+    const __m128i sseAdapt = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&pAdapt[z + n])); \
+    const __m128i sseNew = _mm_add_epi32(sseM, _mm_sign_epi32(sseAdapt, sseDir));                \
+    _mm_store_si128(reinterpret_cast<__m128i *>(&pM[z + n]), sseNew);                            \
+}
+
+static void AdaptSSE41(int * pM, const int * pAdapt, int64 nDirection, int nOrder)
+{
+    // we require that pM is aligned, allowing faster loads and stores
+    ASSERT((reinterpret_cast<size_t>(pM) % 16) == 0);
+
+    // we're working 16 elements at a time
+    ASSERT((nOrder % 16) == 0);
+
+    // figure out direction
+    const __m128i sseDir = _mm_set1_epi32((nDirection < 0) - (nDirection > 0));
+
+    int z = 0, n = 0;
+    for (z = 0; z < nOrder; z += 16)
+        EXPAND_SIMD_4(n, 4, ADAPT_SSE41_SIMD_INT)
+}
+
 static int32 CalculateDotProductSSE41(const short * pA, const short * pB, int nOrder)
 {
     return CalculateDotProductSSE2(pA, pB, nOrder);
@@ -92,7 +121,7 @@ template <class INTTYPE, class DATATYPE> INTTYPE CNNFilter<INTTYPE, DATATYPE>::C
     INTTYPE nOutput = static_cast<INTTYPE>(nInput - ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
 
     // adapt
-    AdaptSSE2(&m_paryM[0], &m_rbDeltaM[-m_nOrder], nOutput, m_nOrder);
+    AdaptSSE41(&m_paryM[0], &m_rbDeltaM[-m_nOrder], nOutput, m_nOrder);
 
     // update delta
     UPDATE_DELTA_NEW(nInput)
@@ -128,7 +157,7 @@ template <class INTTYPE, class DATATYPE> INTTYPE CNNFilter<INTTYPE, DATATYPE>::D
         nOutput = static_cast<INTTYPE>(nInput + ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
 
     // adapt
-    AdaptSSE2(&m_paryM[0], &m_rbDeltaM[-m_nOrder], nInput, m_nOrder);
+    AdaptSSE41(&m_paryM[0], &m_rbDeltaM[-m_nOrder], nInput, m_nOrder);
 
     // update delta
     if ((m_nVersion == -1) || (m_nVersion >= 3980))

@@ -37,16 +37,6 @@ CAPEDecompressCoreOld::~CAPEDecompressCoreOld()
 {
 }
 
-int * CAPEDecompressCoreOld::GetDataX()
-{
-    return m_spDataX;
-}
-
-int * CAPEDecompressCoreOld::GetDataY()
-{
-    return m_spDataY;
-}
-
 void CAPEDecompressCoreOld::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex)
 {
     if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) == 2)
@@ -121,6 +111,8 @@ void CAPEDecompressCoreOld::GenerateDecodedArray(int * pInputArray, int nNumberE
         case APE_COMPRESSION_LEVEL_EXTRA_HIGH:
 
             int64 aryCoefficientsA[64], aryCoefficientsB[64];
+            APE_CLEAR(aryCoefficientsA); // clear to make Clang happy
+            APE_CLEAR(aryCoefficientsB); // clear to make Clang happy
             uint32 nNumberOfCoefficients;
 
             #define GET_COEFFICIENTS(NumberOfCoefficientsBits, ValueBits)                                            \

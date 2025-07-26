@@ -54,7 +54,7 @@ Global includes
 
 #if defined(PLATFORM_WINDOWS)
     #ifndef NOMINMAX
-        #define NOMINMAX // remove the global min / max macros so ape_min / ape_max will always be used
+        #define NOMINMAX // remove the global min / max macros so APE_MIN / APE_MAX will always be used
     #endif
     #include "WindowsEnvironment.h"
     #define WIN32_LEAN_AND_MEAN
@@ -76,9 +76,9 @@ Global includes
     #include <wchar.h>
     #include <MAC/NoWindows.h>
 #endif
-#define ape_max(a, b) (((a) > (b)) ? (a) : (b))
-#define ape_min(a, b) (((a) < (b)) ? (a) : (b))
-#define ape_cap(value, low, high) (((value) < (low)) ? (low) : ((value) > (high)) ? (high) : (value))
+#define APE_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define APE_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define APE_CAP(value, low, high) (((value) < (low)) ? (low) : ((value) > (high)) ? (high) : (value))
 #define APE_CLEAR(destination) memset(&destination, 0, sizeof(destination))
 
 /**************************************************************************************************
@@ -311,7 +311,12 @@ Byte order
 **************************************************************************************************/
 #define APE_LITTLE_ENDIAN     1234
 #define APE_BIG_ENDIAN        4321
+
+#if defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))
+#define APE_BYTE_ORDER        APE_BIG_ENDIAN
+#else
 #define APE_BYTE_ORDER        APE_LITTLE_ENDIAN
+#endif
 
 /**************************************************************************************************
 Channels
@@ -369,6 +374,7 @@ Error Codes
 #define ERROR_UNSUPPORTED_FILE_TYPE                     1013
 #define ERROR_UNSUPPORTED_FILE_VERSION                  1014
 #define ERROR_OPENING_FILE_IN_USE                       1015
+#define ERROR_UAC_PERMISSION                            1016
 
 // memory errors (2000's)
 #define ERROR_INSUFFICIENT_MEMORY                       2000
