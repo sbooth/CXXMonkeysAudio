@@ -4,12 +4,13 @@
 namespace APE
 {
 
-CWholeFileIO * CreateWholeFileIO(CIO * pSource, int64 nSize)
+CWholeFileIO * CreateWholeFileIO(IAPEIO * pSource, int64 nSize)
 {
     // the size should be correct
     ASSERT(nSize == pSource->GetSize());
 
     int nResult = ERROR_SUCCESS;
+    CWholeFileIO * pIO = APE_NULL;
 
     // make sure we're at the head of the file
     pSource->Seek(0, SeekFileBegin);
@@ -17,41 +18,95 @@ CWholeFileIO * CreateWholeFileIO(CIO * pSource, int64 nSize)
     // the the size as 32-bit
     const uint32 n32BitSize = static_cast<uint32>(nSize); // we established it will fit above
 
-    CSmartPtr<unsigned char> spWholeFile;
-    if (nSize == n32BitSize)
+    if (nSize == APE_FILE_SIZE_UNDEFINED)
+    {
+        // simply read until we're at the EOF
+        // we read in 64MB chunks, and grow by 64MB and after the final read there's a little extra at the end that's just filled with garbage and not used by the CWholeFileIO object
+        int64 nBytes = 0;
+        
+        // keeping this constant was tested by a user and performed the best
+        // these were his results encoding a single big file from a pipe:
+        // 2x : 45.5s (nGrowBytes *= 2)
+        // 1m : 68.2s
+        // 16m : 22.6s
+        // 64m : 21.8s
+        const int64 nGrowBytes = 64 * APE_BYTES_IN_MEGABYTE; 
+
+        // allocate the first buffer then start the read loop
+        unsigned char * pBuffer = new unsigned char [static_cast<size_t>(nGrowBytes)];
+        unsigned int nBytesRead = 0;
+        while ((pBuffer != APE_NULL) && (pSource->Read(&pBuffer[nBytes], static_cast<unsigned int>(nGrowBytes), &nBytesRead) == ERROR_SUCCESS))
+        {
+            // increment the position
+            nBytes += nBytesRead;
+
+            // check for the end of file
+            if (nBytesRead < nGrowBytes)
+            {
+                // we're at the end of the file, so just stop reading
+                break;
+            }
+            else
+            {
+                // make a new buffer that contains the new data and read again
+                unsigned char * pNewBuffer = new unsigned char [static_cast<size_t>(nBytes + nGrowBytes)];
+                if (pNewBuffer != APE_NULL)
+                {
+                    // copy old buffer
+                    memcpy(pNewBuffer, pBuffer, static_cast<size_t>(nBytes));
+
+                    // move new buffer into the buffer pointer
+                    delete [] pBuffer;
+                    pBuffer = pNewBuffer;
+                }
+                else
+                {
+                    // just release the buffer and stop reading (since allocation failed)
+                    APE_SAFE_ARRAY_DELETE(pBuffer)
+                }
+            }
+        }
+
+        // create IO object
+        if (pBuffer != APE_NULL)
+            pIO = new CWholeFileIO(pSource, pBuffer, nBytes);
+
+        // don't delete pBuffer since it's now owned by the file I/O object
+    }
+    else if (nSize == n32BitSize)
     {
         // create a buffer
+        CSmartPtr<unsigned char> spWholeFile;
         try
         {
-            spWholeFile.Assign(new unsigned char [n32BitSize], true);
+            spWholeFile.AllocateArray(n32BitSize);
             //spWholeFile.Assign(new unsigned char[0x7FFFFFFF], true); // test for allocating a huge size
         }
         catch (...)
         {
         }
-    }
 
-    CWholeFileIO * pIO = APE_NULL;
-    if (spWholeFile != APE_NULL)
-    {
-        // read
-        unsigned int nBytesRead = 0;
-        nResult = pSource->Read(spWholeFile, n32BitSize, &nBytesRead);
-        if (nBytesRead < n32BitSize)
-            nResult = ERROR_IO_READ;
-
-        if (nResult == ERROR_SUCCESS)
+        if (spWholeFile != APE_NULL)
         {
-            // create IO object
-            pIO = new CWholeFileIO(pSource, spWholeFile, nBytesRead);
-            spWholeFile.SetDelete(false); // it's now owned by CWholeFileIO
+            // read
+            unsigned int nBytesRead = 0;
+            nResult = pSource->Read(spWholeFile, n32BitSize, &nBytesRead);
+            if (nBytesRead < n32BitSize)
+                nResult = ERROR_IO_READ;
+
+            if (nResult == ERROR_SUCCESS)
+            {
+                // create IO object
+                pIO = new CWholeFileIO(pSource, spWholeFile, nBytesRead);
+                spWholeFile.SetDelete(false); // it's now owned by CWholeFileIO
+            }
         }
     }
 
     return pIO;
 }
 
-CWholeFileIO::CWholeFileIO(CIO * pSource, unsigned char * pBuffer, int64 nFileBytes)
+CWholeFileIO::CWholeFileIO(IAPEIO * pSource, unsigned char * pBuffer, int64 nFileBytes)
 {
     // store source
     m_spSource.Assign(pSource);
@@ -68,7 +123,7 @@ CWholeFileIO::~CWholeFileIO()
     m_spSource.Delete();
 }
 
-int CWholeFileIO::Open(const wchar_t *, bool)
+int CWholeFileIO::Open(const str_utfn *, bool)
 {
     return ERROR_SUCCESS;
 }
@@ -142,12 +197,12 @@ int64 CWholeFileIO::GetSize()
     return m_nWholeFileSize;
 }
 
-int CWholeFileIO::GetName(wchar_t *)
+int CWholeFileIO::GetName(str_utfn *)
 {
     return ERROR_UNDEFINED;
 }
 
-int CWholeFileIO::Create(const wchar_t *)
+int CWholeFileIO::Create(const str_utfn *)
 {
     return ERROR_UNDEFINED;
 }

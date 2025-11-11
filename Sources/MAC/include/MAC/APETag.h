@@ -3,7 +3,7 @@
 namespace APE
 {
 
-class CIO;
+class IAPEIO;
 
 /**************************************************************************************************
 APETag version history / supported formats
@@ -209,7 +209,7 @@ private:
     void Save32(char * pBuffer, int nValue);
 
     // data
-    CSmartPtr<str_utfn> m_spFieldNameUTF16;
+    CSmartPtr<str_utfn> m_spFieldNameUTFN;
     CSmartPtr<char> m_spFieldValue;
     int m_nFieldFlags;
     int m_nFieldValueBytes;
@@ -240,6 +240,7 @@ public:
     virtual int GetFieldBinary(const str_utfn * pFieldName, void * pBuffer, int * pBufferBytes) = 0;
     virtual int GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int * pBufferCharacters, const str_utfn * pListDelimiter = L"; ") = 0;
     virtual int GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int * pBufferCharacters, bool bUTF8Encode = false) = 0;
+    virtual int GetFieldNumber(const str_utfn * pFieldName, int nNotFoundResult = -1) = 0;
 
     // remove a specific field
     virtual int RemoveField(const str_utfn * pFieldName) = 0;
@@ -282,7 +283,7 @@ public:
     // create an APE tag
     // bAnalyze determines whether it will analyze immediately or on the first request
     // be careful with multiple threads / file pointer movement if you don't analyze immediately
-    CAPETag(CIO * pIO, bool bAnalyze = true, bool bCheckForID3v1 = true);
+    CAPETag(IAPEIO * pIO, bool bAnalyze = true, bool bCheckForID3v1 = true);
     CAPETag(const str_utfn * pFilename, bool bAnalyze = true);
 
     // destructor
@@ -304,6 +305,7 @@ public:
     int GetFieldBinary(const str_utfn * pFieldName, void * pBuffer, int * pBufferBytes);
     int GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int * pBufferCharacters, const str_utfn * pListDelimiter = L"; ");
     int GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int * pBufferCharacters, bool bUTF8Encode = false);
+    int GetFieldNumber(const str_utfn * pFieldName, int nNotFoundResult = -1);
 
     // remove a specific field
     int RemoveField(const str_utfn * pFieldName);
@@ -326,7 +328,7 @@ public:
     bool GetHasID3Tag();
     bool GetHasAPETag();
     int GetAPETagVersion();
-    bool GetIOMatches(APE::CIO * pIO);
+    bool GetIOMatches(APE::IAPEIO * pIO);
 
     // gets a desired tag field (returns NULL if not found)
     // again, be careful, because this a pointer to the actual field in this class
@@ -339,7 +341,7 @@ public:
     // statics
     static const int s_nID3GenreUndefined = 255;
     static const int s_nID3GenreCount = 148;
-    static const wchar_t * s_aryID3GenreNames[s_nID3GenreCount];
+    static const str_utfn * s_aryID3GenreNames[s_nID3GenreCount];
 
 private:
     // private functions
@@ -355,7 +357,7 @@ private:
     int GetFieldID3String(const str_utfn * pFieldName, char * pBuffer, int nBytes);
 
     // private data
-    CSmartPtr<CIO> m_spIO;
+    CSmartPtr<IAPEIO> m_spIO;
     int m_nTagBytes;
     int m_nFields;
     int m_nAllocatedFields;

@@ -15,12 +15,12 @@ public:
     CAPECompressCreate();
     ~CAPECompressCreate();
 
-    int InitializeFile(CIO * pIO, const WAVEFORMATEX * pwfeInput, intn nMaxFrames, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int32 nFlags);
-    int FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalFrameBlocks, const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes);
+    int InitializeFile(IAPEIO * pIO, const WAVEFORMATEX * pwfeInput, intn nMaxFrames, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int32 nFlags);
+    int FinalizeFile(IAPEIO * pIO, int nNumberOfFrames, int nFinalFrameBlocks, const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes);
 
     int SetSeekByte(int nFrame, int64 nByteOffset);
 
-    int Start(CIO * pioOutput, int nThreads, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel = APE_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = APE_NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int32 nFlags = 0);
+    int Start(IAPEIO * pioOutput, int nThreads, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel = APE_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = APE_NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int32 nFlags = 0);
 
     intn GetFullFrameBytes() const;
     int EncodeFrame(const void * pInputData, int nInputBytes);
@@ -33,7 +33,7 @@ private:
     CSmartPtr<uint32> m_spSeekTable;
     intn m_nMaxFrames;
 
-    CSmartPtr<CIO> m_spIO;
+    CSmartPtr<IAPEIO> m_spIO;
     CSmartPtr<CAPECompressCore> m_spAPECompressCore[32];
 
     int m_nThreads;

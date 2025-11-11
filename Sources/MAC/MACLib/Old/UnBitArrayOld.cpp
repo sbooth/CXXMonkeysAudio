@@ -366,7 +366,7 @@ inline int CUnBitArrayOld::DecodeValueNew(bool bCapOverflow)
 /**************************************************************************************************
 CUnBitArray3891To3989
 **************************************************************************************************/
-CUnBitArray3891To3989::CUnBitArray3891To3989(CIO * pIO, intn nVersion, int64 nFurthestReadByte) :
+CUnBitArray3891To3989::CUnBitArray3891To3989(IAPEIO * pIO, intn nVersion, int64 nFurthestReadByte) :
     CUnBitArrayBase(nFurthestReadByte)
 {
     APE_CLEAR(m_RangeCoderInfo);

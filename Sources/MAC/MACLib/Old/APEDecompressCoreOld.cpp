@@ -1,11 +1,11 @@
 #include "All.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-#include "UnMAC.h"
+#include "UnMACOld.h"
 #include "APEDecompressCoreOld.h"
 #include "APEInfo.h"
 #include "GlobalFunctions.h"
-#include "Anti-Predictor.h"
+#include "AntiPredictorOld.h"
 #include "Prepare.h"
 
 namespace APE
@@ -24,9 +24,9 @@ CAPEDecompressCoreOld::CAPEDecompressCoreOld(IAPEDecompress * pAPEDecompress)
     m_spAntiPredictorX.Assign(CreateAntiPredictor(static_cast<intn>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL)), static_cast<intn>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION))));
     m_spAntiPredictorY.Assign(CreateAntiPredictor(static_cast<intn>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL)), static_cast<intn>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION))));
 
-    m_spDataX.Assign(new int [static_cast<size_t>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
-    m_spDataY.Assign(new int [static_cast<size_t>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
-    m_spTempData.Assign(new int [static_cast<size_t>(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
+    m_spDataX.AllocateArray(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME) + 16);
+    m_spDataY.AllocateArray(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME) + 16);
+    m_spTempData.AllocateArray(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME) + 16);
 
     m_nBlocksProcessed = 0;
     m_BitArrayStateX.nKSum = 0;
@@ -43,13 +43,13 @@ void CAPEDecompressCoreOld::GenerateDecodedArrays(intn nBlocks, intn nSpecialCod
     {
         if ((nSpecialCodes & SPECIAL_FRAME_LEFT_SILENCE) && (nSpecialCodes & SPECIAL_FRAME_RIGHT_SILENCE))
         {
-            memset(m_spDataX, 0, static_cast<size_t>(nBlocks * 4));
-            memset(m_spDataY, 0, static_cast<size_t>(nBlocks * 4));
+            APE_CLEAR_ARRAY(m_spDataX, nBlocks);
+            APE_CLEAR_ARRAY(m_spDataY, nBlocks);
         }
         else if (nSpecialCodes & SPECIAL_FRAME_PSEUDO_STEREO)
         {
             GenerateDecodedArray(m_spDataX, static_cast<int>(nBlocks), nFrameIndex, m_spAntiPredictorX);
-            memset(m_spDataY, 0, static_cast<size_t>(nBlocks * 4));
+            APE_CLEAR_ARRAY(m_spDataY, nBlocks);
         }
         else
         {
@@ -61,7 +61,7 @@ void CAPEDecompressCoreOld::GenerateDecodedArrays(intn nBlocks, intn nSpecialCod
     {
         if (nSpecialCodes & SPECIAL_FRAME_LEFT_SILENCE)
         {
-            memset(m_spDataX, 0, static_cast<size_t>(nBlocks * 4));
+            APE_CLEAR_ARRAY(m_spDataX, nBlocks);
         }
         else
         {

@@ -86,7 +86,7 @@ template <class INTTYPE, class DATATYPE> CNNFilter<INTTYPE, DATATYPE>::~CNNFilte
 
 template <class INTTYPE, class DATATYPE> void CNNFilter<INTTYPE, DATATYPE>::Flush()
 {
-    memset(&m_paryM[0], 0, static_cast<size_t>(m_nOrder) * sizeof(DATATYPE));
+    APE_CLEAR_ARRAY(m_paryM, m_nOrder);
     m_rbInput.Flush();
     m_rbDeltaM.Flush();
     m_nRunningAverage = 0;

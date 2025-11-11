@@ -22,5 +22,6 @@ Warnings
 #pragma clang diagnostic ignored "-Wswitch-default" // this wants default in all the switches, but then it warns about having a default when all the cases are covered
 #pragma clang diagnostic ignored "-Wexit-time-destructors" // this shows for global variables which are needed sometimes
 #pragma clang diagnostic ignored "-Wglobal-constructors" // some variables like the application object need to be global
+#pragma clang diagnostic ignored "-Wpragma-once-outside-header" // this fires on a couple files for no reason that I can figure
 
 #endif // _MSC_VER

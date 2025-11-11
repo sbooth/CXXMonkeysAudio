@@ -21,7 +21,6 @@ CAPEDecompressCore::CAPEDecompressCore(int * pErrorCode, CAPEDecompress * pDecom
     m_pDecompress = pDecompress;
 
     // get format information
-    APE_CLEAR(m_wfeInput);
     m_pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&m_wfeInput));
     m_nBlockAlign = static_cast<int>(m_pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN));
 
@@ -42,7 +41,7 @@ CAPEDecompressCore::CAPEDecompressCore(int * pErrorCode, CAPEDecompress * pDecom
     APE_CLEAR(m_aryBitArrayStates);
 
     // channel data
-    m_sparyChannelData.Assign(new int [APE_MAXIMUM_CHANNELS], true);
+    m_sparyChannelData.AllocateArray(APE_MAXIMUM_CHANNELS);
 
     // predictors
     APE_CLEAR(m_aryPredictor);
@@ -106,7 +105,7 @@ unsigned char * CAPEDecompressCore::GetInputBuffer(uint32 nInputBytes)
 {
     if (m_nInputBytes < nInputBytes)
     {
-        m_spInputData.Assign(new unsigned char[static_cast<size_t>(nInputBytes)], true);
+        m_spInputData.AllocateArray(nInputBytes);
         m_spIO.Assign(new CMemoryIO(m_spInputData, static_cast<int>(nInputBytes)));
         m_spUnBitArray.Assign(CreateUnBitArray(m_pDecompress, m_spIO, static_cast<int>(m_pDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION))));
         m_nInputBytes = nInputBytes;

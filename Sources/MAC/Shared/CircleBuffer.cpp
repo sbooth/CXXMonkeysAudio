@@ -26,7 +26,7 @@ void CCircleBuffer::CreateBuffer(uint32 nBytes, uint32 nMaxDirectWriteBytes)
 
     m_nMaxDirectWriteBytes = nMaxDirectWriteBytes;
     m_nTotal = nBytes + 1 + nMaxDirectWriteBytes;
-    m_spBuffer.Assign(new unsigned char[static_cast<size_t>(m_nTotal)], true);
+    m_spBuffer.AllocateArray(m_nTotal);
     m_nHead = 0;
     m_nTail = 0;
     m_nEndCap = m_nTotal;

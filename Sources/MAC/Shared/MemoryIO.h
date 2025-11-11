@@ -1,11 +1,11 @@
 #pragma once
 
-#include "IO.h"
+#include "IAPEIO.h"
 
 namespace APE
 {
 
-class CMemoryIO : public CIO
+class CMemoryIO : public IAPEIO
 {
 public:
     // construction / destruction
@@ -13,7 +13,7 @@ public:
     ~CMemoryIO();
 
     // open / close
-    int Open(const wchar_t * pName, bool bOpenReadOnly = false) APE_OVERRIDE;
+    int Open(const str_utfn * pName, bool bOpenReadOnly = false) APE_OVERRIDE;
     int Close() APE_OVERRIDE;
 
     // read / write
@@ -28,13 +28,13 @@ public:
     unsigned char * GetBuffer(int * pnBufferBytes) APE_OVERRIDE;
 
     // creation / destruction
-    int Create(const wchar_t * pName) APE_OVERRIDE;
+    int Create(const str_utfn * pName) APE_OVERRIDE;
     int Delete() APE_OVERRIDE;
 
     // attributes
     int64 GetPosition() APE_OVERRIDE;
     int64 GetSize() APE_OVERRIDE;
-    int GetName(wchar_t * pBuffer) APE_OVERRIDE;
+    int GetName(str_utfn * pBuffer) APE_OVERRIDE;
 
 private:
     unsigned char * m_pBuffer;

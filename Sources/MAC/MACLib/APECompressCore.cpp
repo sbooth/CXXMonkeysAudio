@@ -14,14 +14,13 @@ CAPECompressCore::CAPECompressCore(const WAVEFORMATEX * pwfeInput, int nMaxFrame
 {
     m_semProcess.Wait();
 
-    APE_CLEAR(m_wfeInput);
     APE_CLEAR(m_aryBitArrayStates);
     m_nMaxFrameBlocks = nMaxFrameBlocks;
     int nDataSize = m_nMaxFrameBlocks * pwfeInput->nChannels * (pwfeInput->wBitsPerSample / 8);
-    m_spInputData.Assign(new unsigned char [static_cast<size_t>(nDataSize)], true);
+    m_spInputData.AllocateArray(nDataSize);
     m_spBitArray.Assign(new CBitArray(static_cast<uint32>(nDataSize / 4 * 3)));
     const intn nChannels = APE_MAX(pwfeInput->nChannels, 2);
-    m_spData.Assign(new int [static_cast<size_t>(m_nMaxFrameBlocks * nChannels)], true);
+    m_spData.AllocateArray(m_nMaxFrameBlocks * nChannels);
     m_spPrepare.Assign(new CPrepare);
     APE_CLEAR(m_aryPredictors);
     for (int nChannel = 0; nChannel < nChannels; nChannel++)

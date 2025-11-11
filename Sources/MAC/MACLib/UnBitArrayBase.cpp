@@ -16,7 +16,7 @@ const uint32 POWERS_OF_TWO_MINUS_ONE[33] = {0,1,3,7,15,31,63,127,255,511,1023,20
 /**************************************************************************************************
 CreateUnBitArray
 **************************************************************************************************/
-CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, CIO * pIO, intn nVersion)
+CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, IAPEIO * pIO, intn nVersion)
 {
     // determine the furthest position we should read in the I/O object
     int64 nFurthestReadByte = pIO->GetSize();
@@ -228,7 +228,7 @@ int CUnBitArrayBase::FillBitArray()
     return (nResult == 0) ? 0 : ERROR_IO_READ;
 }
 
-int CUnBitArrayBase::CreateHelper(CIO * pIO, intn nBytes, intn nVersion)
+int CUnBitArrayBase::CreateHelper(IAPEIO * pIO, intn nBytes, intn nVersion)
 {
     // check the parameters
     if ((pIO == APE_NULL) || (nBytes <= 0)) { return ERROR_BAD_PARAMETER; }
@@ -245,12 +245,11 @@ int CUnBitArrayBase::CreateHelper(CIO * pIO, intn nBytes, intn nVersion)
     m_nCurrentBitIndex = 0;
 
     // create the bitarray (we allocate and empty a little extra as buffer insurance, although it should never be necessary)
-    const size_t nAllocateElements = static_cast<size_t>(m_nElements) + 64;
-    m_spBitArray.Assign(new uint32[nAllocateElements], true);
+    int64 nAllocateElements = static_cast<int64>(m_nElements) + 64;
+    m_spBitArray.AllocateArray(nAllocateElements, true);
     if (m_spBitArray == APE_NULL)
         return ERROR_INSUFFICIENT_MEMORY;
 
-    memset(m_spBitArray, 0, nAllocateElements * sizeof(m_spBitArray[0]));
     return ERROR_SUCCESS;
 }
 

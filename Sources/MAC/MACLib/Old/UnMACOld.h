@@ -14,14 +14,14 @@ class IPredictorDecompress;
 class IAPEDecompress;
 
 /**************************************************************************************************
-CUnMAC class... a class that allows decoding on a frame-by-frame basis
+CUnMACOld class... a class that allows decoding on a frame-by-frame basis
 **************************************************************************************************/
-class CUnMAC
+class CUnMACOld
 {
 public:
     // construction / destruction
-    CUnMAC();
-    ~CUnMAC();
+    CUnMACOld();
+    ~CUnMACOld();
 
     // functions
     int Initialize(IAPEDecompress * pAPEDecompress);

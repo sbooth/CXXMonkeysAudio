@@ -8,7 +8,7 @@ to do whatever you need. The destructor will take care of any cleanup.
 
 #pragma once
 
-#include "IO.h"
+#include "IAPEIO.h"
 #include "APETag.h"
 #include "MACLib.h"
 
@@ -47,7 +47,6 @@ public:
     int nDecompressedBitrate;                       // the kbps of the decompressed audio (i.e. 1440 kpbs for CD audio)
     int nJunkHeaderBytes;                           // used for ID3v2, etc.
     int nSeekTableElements;                         // the number of elements in the seek table(s)
-    int nMD5Invalid;                                // whether the MD5 is valid
 
     CSmartPtr<int64> spSeekByteTable64;             // the seek table (byte)
     CSmartPtr<unsigned char> spWaveHeaderData;      // the pre-audio header data
@@ -63,7 +62,7 @@ Helper macros (sort of hacky)
 #define GET_USES_CRC(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FORMAT_FLAGS) & APE_FORMAT_FLAG_CRC) ? true : false)
 #define GET_FRAMES_START_ON_BYTES_BOUNDARIES(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) > 3800) ? true : false)
 #define GET_USES_SPECIAL_FRAMES(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) > 3820) ? true : false)
-#define GET_IO(APE_INFO) (reinterpret_cast<CIO *> ((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_IO_SOURCE)))
+#define GET_IO(APE_INFO) (reinterpret_cast<IAPEIO *> ((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_IO_SOURCE)))
 #define GET_TAG(APE_INFO) (((APE_INFO) != APE_NULL) ? (reinterpret_cast<IAPETag *>((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_TAG))) : APE_NULL)
 #define GET_INFO(APE_INFO) reinterpret_cast<const APE_FILE_INFO *>((APE_INFO)->GetInfo(IAPEDecompress::APE_INTERNAL_INFO))
 
@@ -86,8 +85,8 @@ class CAPEInfo : public IAPEInfo
 {
 public:
     // construction and destruction
-    CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag = APE_NULL, bool bAPL = false, bool bReadOnly = false, bool bAnalyzeTagNow = true, bool bReadWholeFile = false);
-    CAPEInfo(int * pErrorCode, APE::CIO * pIO, CAPETag * pTag = APE_NULL);
+    CAPEInfo(int * pErrorCode, const str_utfn * pFilename, CAPETag * pTag = APE_NULL, bool bAPL = false, bool bReadOnly = false, bool bAnalyzeTagNow = true, bool bReadWholeFile = false);
+    CAPEInfo(int * pErrorCode, APE::IAPEIO * pIO, CAPETag * pTag = APE_NULL);
     virtual ~CAPEInfo();
 
     // query for information
@@ -97,11 +96,10 @@ private:
     // internal functions
     int GetFileInformation();
     int CloseFile();
-    int CheckHeaderInformation();
     bool GetCheckForID3v1();
 
     // internal variables
-    CSmartPtr<APE::CIO> m_spIO;
+    CSmartPtr<APE::IAPEIO> m_spIO;
     CSmartPtr<CAPETag> m_spAPETag;
     APE_FILE_INFO m_APEFileInfo;
     bool m_bHasFileInformationLoaded;

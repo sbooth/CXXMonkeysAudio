@@ -183,7 +183,7 @@ int CAPEDecompress::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * pBlo
             CFloatTransform::Process(reinterpret_cast<uint32 *>(pBuffer), nBlocksDecoded * GetInfo(IAPEDecompress::APE_INFO_CHANNELS));
     }
 
-    if ((pProcessing == APE_NULL) || (pProcessing->bApplySigned8BitProcessing == true))
+    if ((pProcessing != APE_NULL) && (pProcessing->bApplySigned8BitProcessing == true))
     {
         if (GetInfo(IAPEDecompress::APE_INFO_FORMAT_FLAGS) & APE_FORMAT_FLAG_SIGNED_8_BIT)
         {
@@ -197,15 +197,16 @@ int CAPEDecompress::GetData(unsigned char * pBuffer, int64 nBlocks, int64 * pBlo
         }
     }
 
-    if ((pProcessing == APE_NULL) || (pProcessing->bApplyBigEndianProcessing == true))
+    if ((pProcessing != APE_NULL) && (pProcessing->bApplyBigEndianProcessing == true))
     {
         if (GetInfo(IAPEDecompress::APE_INFO_FORMAT_FLAGS) & APE_FORMAT_FLAG_BIG_ENDIAN)
         {
-            const int64 nChannels = GetInfo(IAPEDecompress::APE_INFO_CHANNELS);
             const int64 nBitdepth = GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE);
-
             if (nBitdepth >= 16)
+            {
+                const int64 nChannels = GetInfo(IAPEDecompress::APE_INFO_CHANNELS);
                 SwitchBufferBytes(pBuffer, static_cast<int>(nBitdepth / 8), static_cast<int>(nBlocksDecoded * nChannels));
+            }
         }
     }
 
@@ -247,7 +248,7 @@ int CAPEDecompress::Seek(int64 nBlockOffset)
     {
         const int64 nBytesToSkip = nBlocksToSkip * m_nBlockAlign;
 
-        CSmartPtr<unsigned char> spTempBuffer(new unsigned char [static_cast<size_t>(nBytesToSkip)], true);
+        CSmartPtr<unsigned char> spTempBuffer(nBytesToSkip);
         if (spTempBuffer == APE_NULL)
             return ERROR_INSUFFICIENT_MEMORY;
 
@@ -393,7 +394,7 @@ int64 CAPEDecompress::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64
             }
             else
             {
-                WAVEFORMATEX wfeFormat; APE_CLEAR(wfeFormat);
+                WAVEFORMATEX wfeFormat;
                 GetInfo(APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
                 WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader,
                     (m_nFinishBlock - m_nStartBlock) * GetInfo(APE_INFO_BLOCK_ALIGN),

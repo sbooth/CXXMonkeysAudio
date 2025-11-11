@@ -55,7 +55,7 @@ class CUnBitArray3891To3989 : public CUnBitArrayBase
 {
 public:
     // construction/destruction
-    CUnBitArray3891To3989(APE::CIO * pIO, intn nVersion, int64 nFurthestReadByte);
+    CUnBitArray3891To3989(APE::IAPEIO * pIO, intn nVersion, int64 nFurthestReadByte);
     ~CUnBitArray3891To3989();
 
     void GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired) APE_OVERRIDE;

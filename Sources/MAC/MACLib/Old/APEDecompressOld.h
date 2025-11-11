@@ -1,7 +1,7 @@
 #pragma once
 
 #include "APEDecompress.h"
-#include "UnMAC.h"
+#include "UnMACOld.h"
 
 namespace APE
 {
@@ -34,7 +34,7 @@ protected:
     int64 m_nCurrentBlock;
 
     // decoding tools
-    CUnMAC m_UnMAC;
+    CUnMACOld m_UnMAC;
     CSmartPtr<CAPEInfo> m_spAPEInfo;
 
     // booleans at the end for alignment

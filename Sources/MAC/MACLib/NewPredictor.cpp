@@ -6,7 +6,7 @@
 namespace APE
 {
 
-#define HISTORY_ELEMENTS        8
+#define HISTORY_ELEMENTS 8
 
 /**************************************************************************************************
 CPredictorCompressNormal
@@ -194,8 +194,8 @@ int CPredictorDecompressNormal3930to3950::Flush()
     if (m_spNNFilter) m_spNNFilter->Flush();
     if (m_spNNFilter1) m_spNNFilter1->Flush();
 
-    ZeroMemory(m_spBuffer, (HISTORY_ELEMENTS + 1) * sizeof(m_spBuffer[0]));
-    ZeroMemory(&m_aryM[0], M_COUNT * sizeof(m_aryM[0]));
+    APE_CLEAR_ARRAY(m_spBuffer, HISTORY_ELEMENTS + 1);
+    APE_CLEAR_ARRAY(m_aryM, M_COUNT);
 
     m_aryM[0] = 360;
     m_aryM[1] = 317;
@@ -317,8 +317,8 @@ template <class INTTYPE, class DATATYPE> int CPredictorDecompress3950toCurrent<I
     if (m_spNNFilter1) m_spNNFilter1->Flush();
     if (m_spNNFilter2) m_spNNFilter2->Flush();
 
-    ZeroMemory(m_aryMA, sizeof(m_aryMA));
-    ZeroMemory(m_aryMB, sizeof(m_aryMB));
+    APE_CLEAR(m_aryMA);
+    APE_CLEAR(m_aryMB);
 
     m_rbPredictionA.Flush();
     m_rbPredictionB.Flush();

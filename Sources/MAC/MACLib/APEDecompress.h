@@ -35,7 +35,7 @@ protected:
     int m_nThreads;
     CSmartPtr<CAPEDecompressCore> m_spAPEDecompressCore[32];
     int m_nNextWorker;
-    CSmartPtr<CIO> m_spIO;
+    CSmartPtr<IAPEIO> m_spIO;
 
     // start / finish information
     int64 m_nStartBlock;

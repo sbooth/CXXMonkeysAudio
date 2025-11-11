@@ -4,7 +4,7 @@ namespace APE
 {
 
 class IAPEDecompress;
-class CIO;
+class IAPEIO;
 
 /**************************************************************************************************
 Defines
@@ -71,7 +71,7 @@ public:
 
 protected:
     // helpers
-    virtual int CreateHelper(CIO * pIO, intn nBytes, intn nVersion);
+    virtual int CreateHelper(IAPEIO * pIO, intn nBytes, intn nVersion);
     virtual uint32 DecodeValueXBits(uint32 nBits);
 
     // helpers (inline)
@@ -93,7 +93,7 @@ protected:
     uint32 m_nGoodBytes;
 
     intn m_nVersion;
-    CIO * m_pIO;
+    IAPEIO * m_pIO;
     int64 m_nFurthestReadByte;
 
     CSmartPtr<uint32> m_spBitArray;
@@ -129,6 +129,6 @@ struct RANGE_CODER_STRUCT_DECOMPRESS
 /**************************************************************************************************
 CreateUnBitArray
 **************************************************************************************************/
-CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, CIO * pIO, intn nVersion);
+CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, IAPEIO * pIO, intn nVersion);
 
 }

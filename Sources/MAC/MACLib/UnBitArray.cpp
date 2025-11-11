@@ -9,7 +9,7 @@ const uint32 K_SUM_MIN_BOUNDARY[32] = {0,32,64,128,256,512,1024,2048,4096,8192,1
 /**************************************************************************************************
 CUnBitArray
 **************************************************************************************************/
-CUnBitArray::CUnBitArray(CIO * pIO, intn nVersion, int64 nFurthestReadByte) :
+CUnBitArray::CUnBitArray(IAPEIO * pIO, intn nVersion, int64 nFurthestReadByte) :
     CUnBitArrayBase(nFurthestReadByte)
 {
     // this bit array should only be used on modern files
