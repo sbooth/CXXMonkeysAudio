@@ -46,7 +46,7 @@ protected:
     int64 m_nFrameBlocks;
     int m_nErrorState;
     bool m_bCancelFrame;
-    CSmartPtr<CIO> m_spIO;
+    CSmartPtr<IAPEIO> m_spIO;
 
     CAPEDecompress * m_pDecompress;
 

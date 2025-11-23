@@ -1,7 +1,7 @@
 #include "All.h"
 #include "APELink.h"
 #include "CharacterHelper.h"
-#include "IO.h"
+#include "IAPEIO.h"
 namespace APE
 {
 
@@ -19,7 +19,7 @@ CAPELink::CAPELink(const str_utfn * pFilename)
     m_cImageFilename[0] = 0;
 
     // open the file
-    CSmartPtr<CIO> spioLinkFile(CreateCIO());
+    CSmartPtr<IAPEIO> spioLinkFile(CreateIAPEIO());
     if (spioLinkFile->Open(pFilename) == ERROR_SUCCESS)
     {
         // create a buffer
@@ -78,7 +78,7 @@ void CAPELink::ParseData(const char * pData, const str_utfn * pFilename)
                     cImageFile[nIndex++] = *pImageCharacter++;
                 cImageFile[nIndex] = 0;
 
-                CSmartPtr<str_utfn> spImageFileUTF16(CAPECharacterHelper::GetUTF16FromUTF8(reinterpret_cast<const str_utf8 *>(cImageFile)), true);
+                CSmartPtr<str_utfn> spImageFileUTF16(CAPECharacterHelper::GetUTFNFromUTF8(reinterpret_cast<const str_utf8 *>(cImageFile)), true);
 
                 // process the path
                 if ((wcsrchr(spImageFileUTF16, APE_FILENAME_SLASH) == APE_NULL) && (wcsrchr(pFilename, APE_FILENAME_SLASH) != APE_NULL))

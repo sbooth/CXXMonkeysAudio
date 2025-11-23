@@ -3,7 +3,7 @@ module MAC {
 	header "MAC/All.h"
 	header "MAC/APETag.h"
 	header "MAC/CharacterHelper.h"
-	header "MAC/IO.h"
+	header "MAC/IAPEIO.h"
 //	header "MAC/MACDll.h"
 	header "MAC/MACLib.h"
 	header "MAC/NoWindows.h"

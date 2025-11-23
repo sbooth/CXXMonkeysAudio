@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IO.h"
+#include "IAPEIO.h"
 #include "APEInfo.h"
 
 namespace APE
@@ -16,7 +16,7 @@ public:
     bool GetIsLinkFile();
     int GetStartBlock();
     int GetFinishBlock();
-    const wchar_t * GetImageFilename();
+    const str_utfn * GetImageFilename();
 
 protected:
     int m_nStartBlock;

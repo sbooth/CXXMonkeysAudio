@@ -65,7 +65,7 @@ int CAPEDecompressOld::InitializeDecompressor()
 
     const int64 nMaximumDecompressedFrameBytes = m_nBlockAlign * static_cast<intn>(GetInfo(APE_INFO_BLOCKS_PER_FRAME));
     const int64 nTotalBufferBytes = APE_MAX(65536, (nMaximumDecompressedFrameBytes + 16) * 2);
-    m_spBuffer.Assign(new unsigned char [static_cast<unsigned int>(nTotalBufferBytes)], true);
+    m_spBuffer.AllocateArray(nTotalBufferBytes);
     if (m_spBuffer == APE_NULL)
         return ERROR_INSUFFICIENT_MEMORY;
 
@@ -154,9 +154,8 @@ int CAPEDecompressOld::Seek(int64 nBlockOffset)
 
     // skip necessary blocks
     const int64 nMaximumDecompressedFrameBytes = m_nBlockAlign * static_cast<int>(GetInfo(APE_INFO_BLOCKS_PER_FRAME));
-    CSmartPtr<unsigned char> spTempBuffer;
-    spTempBuffer.Assign(new unsigned char [static_cast<size_t>(nMaximumDecompressedFrameBytes + 16)], true);
-    ZeroMemory(spTempBuffer.GetPtr(), static_cast<size_t>(nMaximumDecompressedFrameBytes + 16));
+    CSmartPtr<unsigned char> spTempBuffer(nMaximumDecompressedFrameBytes + 16);
+    APE_CLEAR_ARRAY(spTempBuffer.GetPtr(), nMaximumDecompressedFrameBytes + 16);
 
     m_nCurrentFrame = nBaseFrame;
 
@@ -257,9 +256,11 @@ int64 CAPEDecompressOld::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int
             }
             else
             {
-                WAVEFORMATEX wfeFormat; APE_CLEAR(wfeFormat);
+                WAVEFORMATEX wfeFormat;
                 GetInfo(APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
-                WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader,
+
+                WAVE_HEADER WAVHeader;
+                FillWaveHeader(&WAVHeader,
                     (m_nFinishBlock - m_nStartBlock) * static_cast<intn>(GetInfo(APE_INFO_BLOCK_ALIGN)),
                     &wfeFormat, 0);
                 memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));

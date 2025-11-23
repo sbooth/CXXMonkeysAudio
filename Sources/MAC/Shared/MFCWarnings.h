@@ -10,6 +10,7 @@ Warnings
 #pragma warning(disable: 4626) // about assigment operator, but not important
 #pragma warning(disable: 4710) // function not inlined
 #pragma warning(disable: 4755) // branch not inlined, but who cares
+#pragma warning(disable: 4865) // this is about enum values needed after the VS2026 update
 #pragma warning(disable: 5026) // informational also about move operations
 #pragma warning(disable: 5027) // informational about a move operator, but who cares
 #pragma warning(disable: 5204) // MFC causes this

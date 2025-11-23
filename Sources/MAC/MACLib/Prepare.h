@@ -19,7 +19,7 @@ Tasks:
 4) do simple analysis
 **************************************************************************************************/
 
-class CIO;
+class IAPEIO;
 class IPredictorDecompress;
 
 class CPrepare

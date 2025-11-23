@@ -6,19 +6,19 @@ namespace APE
 /**************************************************************************************************
 Definitions
 **************************************************************************************************/
-class CIO;
+class IAPEIO;
 
 /**************************************************************************************************
 Read / Write from an IO source and return failure if the number of bytes specified
 isn't read or written
 **************************************************************************************************/
-int ReadSafe(CIO * pIO, void * pBuffer, int nBytes);
-intn WriteSafe(CIO * pIO, void * pBuffer, intn nBytes);
+int ReadSafe(IAPEIO * pIO, void * pBuffer, int nBytes);
+intn WriteSafe(IAPEIO * pIO, void * pBuffer, intn nBytes);
 
 /**************************************************************************************************
 Checks for the existence of a file
 **************************************************************************************************/
-bool FileExists(const wchar_t * pFilename);
+bool FileExists(const str_utfn * pFilename);
 
 /**************************************************************************************************
 Allocate aligned memory

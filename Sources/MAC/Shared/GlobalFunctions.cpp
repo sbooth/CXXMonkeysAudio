@@ -1,11 +1,7 @@
 #include "All.h"
 #include "GlobalFunctions.h"
-#include "IO.h"
+#include "IAPEIO.h"
 #include "CharacterHelper.h"
-
-#ifdef _MSC_VER
-    #include <intrin.h>
-#endif
 
 #ifdef PLATFORM_APPLE
     #include <AvailabilityMacros.h>
@@ -18,7 +14,7 @@
 namespace APE
 {
 
-int ReadSafe(CIO * pIO, void * pBuffer, int nBytes)
+int ReadSafe(IAPEIO * pIO, void * pBuffer, int nBytes)
 {
     unsigned int nBytesRead = 0;
     int nResult = pIO->Read(pBuffer, static_cast<unsigned int>(nBytes), &nBytesRead);
@@ -31,7 +27,7 @@ int ReadSafe(CIO * pIO, void * pBuffer, int nBytes)
     return nResult;
 }
 
-intn WriteSafe(CIO * pIO, void * pBuffer, intn nBytes)
+intn WriteSafe(IAPEIO * pIO, void * pBuffer, intn nBytes)
 {
     unsigned int nBytesWritten = 0;
     intn nResult = pIO->Write(pBuffer, static_cast<unsigned int>(nBytes), &nBytesWritten);
@@ -44,7 +40,7 @@ intn WriteSafe(CIO * pIO, void * pBuffer, intn nBytes)
     return nResult;
 }
 
-bool FileExists(const wchar_t * pFilename)
+bool FileExists(const str_utfn * pFilename)
 {
     if (pFilename == APE_NULL)
         return false;
@@ -57,7 +53,7 @@ bool FileExists(const wchar_t * pFilename)
 #ifdef UNICODE
     HANDLE hFind = FindFirstFile(pFilename, &WFD);
 #else
-    CSmartPtr<char> spFilename(CAPECharacterHelper::GetANSIFromUTF16(pFilename), true);
+    CSmartPtr<char> spFilename(CAPECharacterHelper::GetANSIFromUTFN(pFilename), true);
     HANDLE hFind = FindFirstFile(spFilename, &WFD);
 #endif
     if (hFind != INVALID_HANDLE_VALUE)
@@ -68,7 +64,7 @@ bool FileExists(const wchar_t * pFilename)
 
     return bFound;
 #else
-    CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTF16(pFilename), true);
+    CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTFN(pFilename), true);
 
     struct stat b;
 

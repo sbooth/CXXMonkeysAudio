@@ -5,7 +5,7 @@ Includes
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
 #include "APEInfo.h"
-#include "UnMAC.h"
+#include "UnMACOld.h"
 #include "Prepare.h"
 #include "APEDecompressCoreOld.h"
 
@@ -13,14 +13,13 @@ namespace APE
 {
 
 /**************************************************************************************************
-CUnMAC class construction
+CUnMACOld class construction
 **************************************************************************************************/
-CUnMAC::CUnMAC()
+CUnMACOld::CUnMACOld()
 {
     // initialize member variables
     m_bInitialized = false;
     m_LastDecodedFrameIndex = -1;
-    APE_CLEAR(m_wfeInput);
 
     m_nBlocksProcessed = 0;
     m_nCRC = 0;
@@ -28,9 +27,9 @@ CUnMAC::CUnMAC()
 }
 
 /**************************************************************************************************
-CUnMAC class destruction
+CUnMACOld class destruction
 **************************************************************************************************/
-CUnMAC::~CUnMAC()
+CUnMACOld::~CUnMACOld()
 {
     // uninitialize the decoder in case it isn't already
     Uninitialize();
@@ -39,7 +38,7 @@ CUnMAC::~CUnMAC()
 /**************************************************************************************************
 Initialize
 **************************************************************************************************/
-int CUnMAC::Initialize(IAPEDecompress * pAPEDecompress)
+int CUnMACOld::Initialize(IAPEDecompress * pAPEDecompress)
 {
     // uninitialize if it is currently initialized
     if (m_bInitialized)
@@ -63,7 +62,7 @@ int CUnMAC::Initialize(IAPEDecompress * pAPEDecompress)
     // set the initialized flag to true
     m_bInitialized = true;
 
-    APE_CLEAR(m_wfeInput);
+    // get the format
     m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&m_wfeInput));
 
     // return a successful value
@@ -73,7 +72,7 @@ int CUnMAC::Initialize(IAPEDecompress * pAPEDecompress)
 /**************************************************************************************************
 Uninitialize
 **************************************************************************************************/
-int CUnMAC::Uninitialize()
+int CUnMACOld::Uninitialize()
 {
     if (m_bInitialized)
     {
@@ -96,7 +95,7 @@ int CUnMAC::Uninitialize()
 /**************************************************************************************************
 Decompress frame
 **************************************************************************************************/
-intn CUnMAC::DecompressFrame(unsigned char * pOutputData, int32 nFrameIndex, int * pErrorCode)
+intn CUnMACOld::DecompressFrame(unsigned char * pOutputData, int32 nFrameIndex, int * pErrorCode)
 {
     return DecompressFrameOld(pOutputData, nFrameIndex, pErrorCode);
 }
@@ -104,7 +103,7 @@ intn CUnMAC::DecompressFrame(unsigned char * pOutputData, int32 nFrameIndex, int
 /**************************************************************************************************
 Seek to the proper frame (if necessary) and do any alignment of the bit array
 **************************************************************************************************/
-int CUnMAC::SeekToFrame(intn FrameIndex)
+int CUnMACOld::SeekToFrame(intn FrameIndex)
 {
     if (GET_FRAMES_START_ON_BYTES_BOUNDARIES(m_spAPEDecompress))
     {
@@ -132,7 +131,7 @@ int CUnMAC::SeekToFrame(intn FrameIndex)
 /**************************************************************************************************
 Old code for frame decompression
 **************************************************************************************************/
-intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, int * pErrorCode)
+intn CUnMACOld::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, int * pErrorCode)
 {
     // error check the parameters (too high of a frame index, etc.)
     if (FrameIndex >= m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TOTAL_FRAMES)) { return ERROR_SUCCESS; }
@@ -192,7 +191,7 @@ intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, i
     {
         m_spAPEDecompressCore->GenerateDecodedArrays(nBlocks, static_cast<intn>(nSpecialCodes), static_cast<intn>(FrameIndex));
 
-        WAVEFORMATEX WaveFormatEx; APE_CLEAR(WaveFormatEx); m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
+        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
         m_spPrepare->UnprepareOld(m_spAPEDecompressCore->GetDataX(), m_spAPEDecompressCore->GetDataY(), nBlocks, &WaveFormatEx,
             pOutputData, static_cast<unsigned int *>(&CRC), static_cast<int>(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     }
@@ -200,7 +199,7 @@ intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, i
     {
         m_spAPEDecompressCore->GenerateDecodedArrays(nBlocks, static_cast<intn>(nSpecialCodes), static_cast<intn>(FrameIndex));
 
-        WAVEFORMATEX WaveFormatEx; APE_CLEAR(WaveFormatEx); m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
+        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
         m_spPrepare->UnprepareOld(m_spAPEDecompressCore->GetDataX(), APE_NULL, nBlocks, &WaveFormatEx,
             pOutputData, static_cast<unsigned int *>(&CRC), static_cast<int>(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     }
@@ -241,7 +240,7 @@ intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, i
 /**************************************************************************************************
 Figures the old checksum using the X,Y data
 **************************************************************************************************/
-uint32 CUnMAC::CalculateOldChecksum(const int * pDataX, const int * pDataY, intn nChannels, intn nBlocks)
+uint32 CUnMACOld::CalculateOldChecksum(const int * pDataX, const int * pDataY, intn nChannels, intn nBlocks)
 {
     uint32 nChecksum = 0;
 

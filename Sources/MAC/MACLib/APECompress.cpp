@@ -19,7 +19,6 @@ CAPECompress::CAPECompress()
     m_nBufferSize = 0;
     m_bBufferLocked = false;
     m_bFloat = false;
-    APE_CLEAR(m_wfeInput);
 
     m_spAPECompressCreate.Assign(new CAPECompressCreate());
 }
@@ -35,11 +34,11 @@ int CAPECompress::SetNumberOfThreads(int nThreads)
     return m_nThreads;
 }
 
-int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pwfeInput, bool bFloat, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int nFlags)
+int CAPECompress::Start(const str_utfn * pOutputFilename, const WAVEFORMATEX * pwfeInput, bool bFloat, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int nFlags)
 {
     m_spioOutput.Delete();
 
-    m_spioOutput.Assign(CreateCIO());
+    m_spioOutput.Assign(CreateIAPEIO());
 
     // update float
     HandleFloat(bFloat, pwfeInput);
@@ -56,7 +55,7 @@ int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pw
     // create buffer
     m_spBuffer.Delete();
     m_nBufferSize = m_spAPECompressCreate->GetFullFrameBytes();
-    m_spBuffer.Assign(new unsigned char [static_cast<size_t>(m_nBufferSize)], true);
+    m_spBuffer.AllocateArray(m_nBufferSize);
 
     // store format
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));
@@ -64,7 +63,7 @@ int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pw
     return nStartResult;
 }
 
-int CAPECompress::StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, bool bFloat, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes)
+int CAPECompress::StartEx(IAPEIO * pioOutput, const WAVEFORMATEX * pwfeInput, bool bFloat, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes)
 {
     // store information (we don't own the I/O object so don't delete it)
     m_spioOutput.Assign(pioOutput, false, false);
@@ -79,7 +78,7 @@ int CAPECompress::StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, bool 
     // create buffer
     m_spBuffer.Delete();
     m_nBufferSize = m_spAPECompressCreate->GetFullFrameBytes();
-    m_spBuffer.Assign(new unsigned char [static_cast<size_t>(m_nBufferSize)], true);
+    m_spBuffer.AllocateArray(m_nBufferSize);
 
     // store format
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));

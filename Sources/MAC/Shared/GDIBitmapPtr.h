@@ -1,5 +1,4 @@
-#ifndef GDI_BITMAP_PTR_HEADER
-#define GDI_BITMAP_PTR_HEADER
+#pragma once
 
 /**************************************************************************************************
 CGDIBitmapPtr
@@ -14,7 +13,7 @@ class CGDIBitmapPtr
 public:
     CGDIBitmapPtr()
     {
-        m_pBitmap = NULL;
+        m_pBitmap = APE_NULL;
     }
     ~CGDIBitmapPtr()
     {
@@ -39,7 +38,7 @@ public:
 
     __forceinline void Delete()
     {
-        if (m_pBitmap != NULL)
+        if (m_pBitmap != APE_NULL)
         {
             // this will cause Clang to lose it (2/5/2025)
             //delete m_pBitmap;
@@ -48,12 +47,10 @@ public:
             Gdiplus::Bitmap::operator delete(m_pBitmap);
 
             // reset pointer
-            m_pBitmap = NULL;
+            m_pBitmap = APE_NULL;
         }
     }
 
 private:
     Gdiplus::Bitmap * m_pBitmap;
 };
-
-#endif // GDI_BITMAP_PTR_HEADER

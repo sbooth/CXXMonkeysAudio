@@ -8,7 +8,7 @@ APE header that all APE files have in common (old and new)
 **************************************************************************************************/
 struct APE_COMMON_HEADER
 {
-    char cID[4];                            // should equal 'MAC '
+    char cID[4];                            // should equal 'MAC ' or 'MACF'
     uint16 nVersion;                        // version number * 1000 (3.81 = 3810)
 };
 
@@ -30,7 +30,7 @@ struct APE_HEADER_OLD
 };
 
 class APE_FILE_INFO;
-class CIO;
+class IAPEIO;
 
 /**************************************************************************************************
 CAPEHeader - makes managing APE headers a little smoother (and the format change as of 3.98)
@@ -38,7 +38,7 @@ CAPEHeader - makes managing APE headers a little smoother (and the format change
 class CAPEHeader
 {
 public:
-    CAPEHeader(CIO * pIO);
+    CAPEHeader(IAPEIO * pIO);
     ~CAPEHeader();
 
     int Analyze(APE_FILE_INFO * pInfo);
@@ -50,7 +50,7 @@ protected:
     int FindDescriptor(bool bSeek);
     void Convert32BitSeekTable(APE_FILE_INFO * pInfo, const uint32 * pSeekTable32, int nSeekTableElements);
 
-    CIO * m_pIO;
+    IAPEIO * m_pIO;
 };
 
 }

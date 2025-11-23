@@ -10,14 +10,14 @@ enum SeekMethod
     SeekFileEnd = 2
 };
 
-class CIO
+class IAPEIO
 {
 public:
     // destruction
-    virtual ~CIO() { };
+    virtual ~IAPEIO() { };
 
     // open / close
-    virtual int Open(const wchar_t * pName, bool bOpenReadOnly = false) = 0;
+    virtual int Open(const str_utfn * pName, bool bOpenReadOnly = false) = 0;
     virtual int Close() = 0;
 
     // read / write
@@ -28,7 +28,7 @@ public:
     virtual int Seek(int64 nPosition, SeekMethod nMethod) = 0;
 
     // creation / destruction
-    virtual int Create(const wchar_t * pName) = 0;
+    virtual int Create(const str_utfn * pName) = 0;
     virtual int Delete() = 0;
 
     // other functions
@@ -38,9 +38,9 @@ public:
     // attributes
     virtual int64 GetPosition() = 0;
     virtual int64 GetSize() = 0;
-    virtual int GetName(wchar_t * pBuffer) = 0;
+    virtual int GetName(str_utfn * pBuffer) = 0;
 };
 
-CIO * CreateCIO();
+IAPEIO * CreateIAPEIO();
 
 }

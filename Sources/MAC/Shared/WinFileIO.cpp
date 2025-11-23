@@ -8,7 +8,7 @@
 namespace APE
 {
 
-CIO * CreateCIO()
+IAPEIO * CreateIAPEIO()
 {
     return new CWinFileIO;
 }
@@ -26,7 +26,7 @@ CWinFileIO::~CWinFileIO()
     APE_SAFE_FILE_CLOSE(m_hFile)
 }
 
-int CWinFileIO::Open(const wchar_t * pName, bool bOpenReadOnly)
+int CWinFileIO::Open(const str_utfn * pName, bool bOpenReadOnly)
 {
     Close();
 
@@ -36,12 +36,12 @@ int CWinFileIO::Open(const wchar_t * pName, bool bOpenReadOnly)
         return ERROR_UNDEFINED;
 
     #ifdef _UNICODE
-        wchar_t * pCopy = new wchar_t [nNameLength + 1];
-        memcpy(pCopy, pName, sizeof(wchar_t) * nNameLength);
+        str_utfn * pCopy = new str_utfn [nNameLength + 1];
+        memcpy(pCopy, pName, sizeof(str_utfn) * nNameLength);
         pCopy[nNameLength] = 0;
-        CSmartPtr<wchar_t> spName(pCopy, true);
+        CSmartPtr<str_utfn> spName(pCopy, true);
     #else
-        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTF16(pName), true);
+        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTFN(pName), true);
     #endif
 
     // handle pipes vs files
@@ -166,9 +166,9 @@ int CWinFileIO::Seek(int64 nPosition, SeekMethod nMethod)
     const LONG Low = static_cast<LONG>(nPosition & 0xFFFFFFFF);
     LONG High = static_cast<LONG>(nPosition >> 32);
 
-    SetFilePointer(m_hFile, Low, &High, dwMoveMethod);
+    DWORD dwResult = SetFilePointer(m_hFile, Low, &High, dwMoveMethod);
 
-    return ERROR_SUCCESS;
+    return (dwResult == INVALID_SET_FILE_POINTER) ? ERROR_UNDEFINED : ERROR_SUCCESS;
 }
 
 int CWinFileIO::SetEOF()
@@ -195,13 +195,13 @@ int64 CWinFileIO::GetSize()
     return static_cast<int64>(dwFileSizeLow) + (static_cast<int64>(dwFileSizeHigh) << 32);
 }
 
-int CWinFileIO::GetName(wchar_t * pBuffer)
+int CWinFileIO::GetName(str_utfn * pBuffer)
 {
     wcscpy_s(pBuffer, APE_MAX_PATH, m_cFileName);
     return ERROR_SUCCESS;
 }
 
-int CWinFileIO::Create(const wchar_t * pName)
+int CWinFileIO::Create(const str_utfn * pName)
 {
     Close();
 
@@ -211,12 +211,12 @@ int CWinFileIO::Create(const wchar_t * pName)
         return ERROR_UNDEFINED;
 
     #ifdef _UNICODE
-        wchar_t * pCopy = new wchar_t [nNameLength + 1];
-        memcpy(pCopy, pName, sizeof(wchar_t) * nNameLength);
+        str_utfn * pCopy = new str_utfn [nNameLength + 1];
+        memcpy(pCopy, pName, sizeof(str_utfn) * nNameLength);
         pCopy[nNameLength] = 0;
-        CSmartPtr<wchar_t> spName(pCopy, true);
+        CSmartPtr<str_utfn> spName(pCopy, true);
     #else
-        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTF16(pName), true);
+        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTFN(pName), true);
     #endif
 
     if (0 == wcscmp(pName, L"-"))
@@ -252,9 +252,9 @@ int CWinFileIO::Delete()
     Close();
 
     #ifdef _UNICODE
-        CSmartPtr<wchar_t> spName(m_cFileName, true, false);
+        CSmartPtr<str_utfn> spName(m_cFileName, true, false);
     #else
-        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTF16(m_cFileName), true);
+        CSmartPtr<char> spName(CAPECharacterHelper::GetANSIFromUTFN(m_cFileName), true);
     #endif
 
     SetFileAttributes(spName, FILE_ATTRIBUTE_NORMAL);

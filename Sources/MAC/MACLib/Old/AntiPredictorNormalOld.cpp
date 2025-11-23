@@ -1,7 +1,7 @@
 #include "All.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-#include "Anti-Predictor.h"
+#include "AntiPredictorOld.h"
 
 namespace APE
 {

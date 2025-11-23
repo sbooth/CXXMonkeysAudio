@@ -2,7 +2,7 @@
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
 #include "MACLib.h"
-#include "Anti-Predictor.h"
+#include "AntiPredictorOld.h"
 
 namespace APE
 {

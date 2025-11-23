@@ -16,7 +16,7 @@ CMemoryIO::~CMemoryIO()
 {
 }
 
-int CMemoryIO::Open(const wchar_t * pName, bool bOpenReadOnly)
+int CMemoryIO::Open(const str_utfn * pName, bool bOpenReadOnly)
 {
     (void) pName;
     (void) bOpenReadOnly;
@@ -93,12 +93,12 @@ int64 CMemoryIO::GetSize()
     return m_nBufferBytes;
 }
 
-int CMemoryIO::GetName(wchar_t *)
+int CMemoryIO::GetName(str_utfn *)
 {
     return ERROR_UNDEFINED;
 }
 
-int CMemoryIO::Create(const wchar_t *)
+int CMemoryIO::Create(const str_utfn *)
 {
     return ERROR_UNDEFINED;
 }

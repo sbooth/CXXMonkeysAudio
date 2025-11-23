@@ -80,11 +80,7 @@ Global includes
 #define APE_MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define APE_CAP(value, low, high) (((value) < (low)) ? (low) : ((value) > (high)) ? (high) : (value))
 #define APE_CLEAR(destination) memset(&destination, 0, sizeof(destination))
-
-/**************************************************************************************************
-Smart pointer
-**************************************************************************************************/
-#include <MAC/SmartPtr.h>
+#define APE_CLEAR_ARRAY(destination, elements) memset(&destination[0], 0, sizeof(destination[0]) * static_cast<size_t>(elements))
 
 /**************************************************************************************************
 Version
@@ -92,7 +88,7 @@ Version
 #include <MAC/Version.h>
 
 // year in the copyright strings
-#define APE_YEAR 2025
+#define APE_YEAR 2026
 
 // build the version string
 #define STRINGIZE2(s) #s
@@ -116,11 +112,10 @@ Version
 /**************************************************************************************************
 Global compiler settings (useful for porting)
 **************************************************************************************************/
-// APE_BACKWARDS_COMPATIBILITY is only needed for decoding APE 3.92 or earlier files. It
+// APE_BACKWARDS_COMPATIBILITY is only needed for decoding earlier than APE 3.99 files. It
 // has not been possible to make these files for over 10 years, so it's unlikely
 // that disabling APE_BACKWARDS_COMPATIBILITY would have any effect on a normal user. For
 // porting or third party usage, it's probably best to not bother with APE_BACKWARDS_COMPATIBILITY.
-// A future release of Monkey's Audio itself may remove support for these obsolete files.
 #define APE_BACKWARDS_COMPATIBILITY
 
 // disable this to turn off compression code
@@ -153,6 +148,11 @@ namespace APE
     typedef unsigned char                               str_utf8;
     typedef wchar_t                                     str_utfn; // could be UTF-16 or UTF-32 depending on platform
 }
+
+/**************************************************************************************************
+Smart pointer
+**************************************************************************************************/
+#include <MAC/SmartPtr.h>
 
 /**************************************************************************************************
 Global macros
@@ -260,8 +260,9 @@ WAVE format descriptor (binary compatible with Windows define, but in the APE na
 namespace APE
 {
     #pragma pack(push, 1)
-    struct WAVEFORMATEX
+    class WAVEFORMATEX
     {
+    public:
         WORD        wFormatTag;         /* format type */
         WORD        nChannels;          /* number of channels (i.e. mono, stereo...) */
         uint32      nSamplesPerSec;     /* sample rate */
@@ -270,6 +271,18 @@ namespace APE
         WORD        wBitsPerSample;     /* number of bits per sample of mono data */
         WORD        cbSize;             /* the count in bytes of the size of */
         /* extra information (after cbSize) */
+
+        WAVEFORMATEX()
+        {
+            // initialize everything to empty on construction (avoids the need to clear variables separately)
+            wFormatTag = 0;
+            nChannels = 0;
+            nSamplesPerSec = 0;
+            nAvgBytesPerSec = 0;
+            nBlockAlign = 0;
+            wBitsPerSample = 0;
+            cbSize = 0;
+        }
     };
     #pragma pack(pop)
 }
@@ -294,12 +307,12 @@ namespace APE
 /**************************************************************************************************
 Global defines
 **************************************************************************************************/
-#define ONE_MILLION                  1000000
 #ifdef PLATFORM_WINDOWS
     #define APE_FILENAME_SLASH '\\'
 #else
     #define APE_FILENAME_SLASH '/'
 #endif
+#define APE_ONE_MILLION                  1000000
 #define APE_BYTES_IN_KILOBYTE            1024
 #define APE_BYTES_IN_MEGABYTE            1048576
 #define APE_BYTES_IN_GIGABYTE            APE::int64(1073741824)

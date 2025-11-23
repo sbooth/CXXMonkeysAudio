@@ -24,7 +24,7 @@ public:
 
     void Flush()
     {
-        ZeroMemory(m_pData, (static_cast<size_t>(m_nHistoryElements) + 1) * sizeof(TYPE));
+        APE_CLEAR_ARRAY(m_pData, m_nHistoryElements + 1);
         m_pCurrent = &m_pData[m_nHistoryElements];
     }
 
@@ -72,7 +72,7 @@ public:
 
     void Flush()
     {
-        ZeroMemory(m_aryData, (HISTORY_ELEMENTS + 1) * sizeof(TYPE));
+        APE_CLEAR_ARRAY(m_aryData, HISTORY_ELEMENTS + 1);
         m_pCurrent = &m_aryData[HISTORY_ELEMENTS];
     }
 
