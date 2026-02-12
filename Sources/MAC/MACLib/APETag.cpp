@@ -19,7 +19,7 @@ CAPETagField::CAPETagField(const str_utfn * pFieldName, const void * pFieldValue
 
     // data (we'll always allocate two extra bytes and memset to 0 so we're safely NULL terminated)
     m_nFieldValueBytes = APE_MAX(nFieldBytes, 0);
-    m_spFieldValue.AllocateArray(m_nFieldValueBytes + 2, true);
+    m_spFieldValue.AllocateArray(static_cast<int64>(m_nFieldValueBytes) + 2, true);
     if (m_nFieldValueBytes > 0)
         memcpy(m_spFieldValue, pFieldValue, static_cast<size_t>(m_nFieldValueBytes));
 
@@ -249,10 +249,9 @@ int CAPETag::WriteBufferToEndOfIO(void * pBuffer, int nBytes)
 {
     const int64 nOriginalPosition = m_spIO->GetPosition();
 
-    unsigned int nBytesWritten = 0;
     m_spIO->Seek(0, SeekFileEnd);
 
-    const int nResult = m_spIO->Write(pBuffer, static_cast<unsigned int>(nBytes), &nBytesWritten);
+    const int nResult = m_spIO->Write(pBuffer, static_cast<unsigned int>(nBytes));
 
     m_spIO->Seek(nOriginalPosition, SeekFileBegin);
 

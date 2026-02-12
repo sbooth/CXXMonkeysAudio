@@ -20,7 +20,7 @@ public:
 
     // read / write
     int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead);
-    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten);
+    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten = APE_NULL);
 
     // seek
     int Seek(int64 nPosition, SeekMethod nMethod);

@@ -3,7 +3,6 @@
 #include "APEDecompressCore.h"
 #include "APEInfo.h"
 #include "NewPredictor.h"
-#include "FloatTransform.h"
 #include "MemoryIO.h"
 
 namespace APE
@@ -21,7 +20,7 @@ CAPEDecompressCore::CAPEDecompressCore(int * pErrorCode, CAPEDecompress * pDecom
     m_pDecompress = pDecompress;
 
     // get format information
-    m_pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&m_wfeInput));
+    m_pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&m_wfeInput));
     m_nBlockAlign = static_cast<int>(m_pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN));
 
     // initialize other stuff

@@ -194,8 +194,10 @@ int CStdLibFileIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int 
 
 int CStdLibFileIO::Write(const void * pBuffer, unsigned  int nBytesToWrite, unsigned int * pBytesWritten)
 {
-    *pBytesWritten = (unsigned int) fwrite(pBuffer, 1, nBytesToWrite, m_pFile);
-    return (ferror(m_pFile) || (*pBytesWritten != nBytesToWrite)) ? ERROR_IO_WRITE : ERROR_SUCCESS;
+    unsigned int nBytesWritten = (unsigned int) fwrite(pBuffer, 1, nBytesToWrite, m_pFile);
+    if (pBytesWritten != APE_NULL)
+        *pBytesWritten = nBytesWritten;
+    return (ferror(m_pFile) || (nBytesWritten != nBytesToWrite)) ? ERROR_IO_WRITE : ERROR_SUCCESS;
 }
 
 int CStdLibFileIO::Seek(int64 nPosition, SeekMethod nMethod)

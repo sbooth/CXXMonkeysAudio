@@ -257,7 +257,7 @@ int64 CAPEDecompressOld::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int
             else
             {
                 WAVEFORMATEX wfeFormat;
-                GetInfo(APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
+                GetInfo(APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&wfeFormat), 0);
 
                 WAVE_HEADER WAVHeader;
                 FillWaveHeader(&WAVHeader,

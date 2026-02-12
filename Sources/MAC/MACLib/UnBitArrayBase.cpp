@@ -2,10 +2,11 @@
 #include "UnBitArrayBase.h"
 #include "APEInfo.h"
 #include "UnBitArray.h"
-#include "GlobalFunctions.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
-    #include "Old/APEDecompressOld.h"
     #include "Old/UnBitArrayOld.h"
+#endif
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    #include "GlobalFunctions.h"
 #endif
 
 namespace APE
@@ -115,10 +116,10 @@ bool CUnBitArrayBase::EnsureBitsAvailable(uint32 nBits, bool bThrowExceptionOnFa
     if ((m_nCurrentBitIndex + nBits) >= (m_nGoodBytes * 8))
     {
         // fill
-        FillBitArray();
+        bool bSuccess = (FillBitArray() == ERROR_SUCCESS);
 
         // if we still don't have enough good bytes, we don't have the bits available
-        if ((m_nCurrentBitIndex + nBits) >= (m_nGoodBytes * 8))
+        if (!bSuccess || ((m_nCurrentBitIndex + nBits) >= (m_nGoodBytes * 8)))
         {
             // overread error
             ASSERT(false);
@@ -225,7 +226,7 @@ int CUnBitArrayBase::FillBitArray()
     m_nCurrentBitIndex = m_nCurrentBitIndex & 31;
 
     // return
-    return (nResult == 0) ? 0 : ERROR_IO_READ;
+    return (nResult == 0) ? ERROR_SUCCESS : ERROR_IO_READ;
 }
 
 int CUnBitArrayBase::CreateHelper(IAPEIO * pIO, intn nBytes, intn nVersion)

@@ -18,7 +18,7 @@ public:
 
     // read / write
     int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead) APE_OVERRIDE;
-    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten) APE_OVERRIDE;
+    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten = APE_NULL) APE_OVERRIDE;
 
     // seek
     int Seek(int64 nPosition, SeekMethod nMethod) APE_OVERRIDE;

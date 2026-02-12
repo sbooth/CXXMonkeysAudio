@@ -39,9 +39,11 @@ int CMemoryIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pB
 
 int CMemoryIO::Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten)
 {
-    *pBytesWritten = APE_MIN(nBytesToWrite, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
-    memcpy(m_pBuffer + m_nPosition, pBuffer, *pBytesWritten);
-    m_nPosition += *pBytesWritten;
+    unsigned int nBytesWritten = APE_MIN(nBytesToWrite, static_cast<unsigned int>(m_nBufferBytes - m_nPosition));
+    memcpy(m_pBuffer + m_nPosition, pBuffer, nBytesWritten);
+    m_nPosition += nBytesWritten;
+    if (pBytesWritten != APE_NULL)
+        *pBytesWritten = nBytesWritten;
     return ERROR_SUCCESS;
 }
 

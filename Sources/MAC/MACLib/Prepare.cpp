@@ -1,7 +1,9 @@
 #include "All.h"
 #include "Prepare.h"
 #include "CRC.h"
-#include "GlobalFunctions.h"
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    #include "GlobalFunctions.h"
+#endif
 
 #if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
     #define APE_24_SHIFT_1ST 0

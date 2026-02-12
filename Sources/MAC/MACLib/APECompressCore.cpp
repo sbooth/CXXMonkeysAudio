@@ -19,11 +19,10 @@ CAPECompressCore::CAPECompressCore(const WAVEFORMATEX * pwfeInput, int nMaxFrame
     int nDataSize = m_nMaxFrameBlocks * pwfeInput->nChannels * (pwfeInput->wBitsPerSample / 8);
     m_spInputData.AllocateArray(nDataSize);
     m_spBitArray.Assign(new CBitArray(static_cast<uint32>(nDataSize / 4 * 3)));
-    const intn nChannels = APE_MAX(pwfeInput->nChannels, 2);
-    m_spData.AllocateArray(m_nMaxFrameBlocks * nChannels);
+    m_spData.AllocateArray(static_cast<int64>(m_nMaxFrameBlocks) * pwfeInput->nChannels);
     m_spPrepare.Assign(new CPrepare);
     APE_CLEAR(m_aryPredictors);
-    for (int nChannel = 0; nChannel < nChannels; nChannel++)
+    for (int nChannel = 0; nChannel < pwfeInput->nChannels; nChannel++)
     {
         if (pwfeInput->wBitsPerSample < 32)
             m_aryPredictors[nChannel] = new CPredictorCompressNormal<int, short>(nCompressionLevel, pwfeInput->wBitsPerSample);
