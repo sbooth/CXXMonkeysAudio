@@ -13,7 +13,6 @@ Read / Write from an IO source and return failure if the number of bytes specifi
 isn't read or written
 **************************************************************************************************/
 int ReadSafe(IAPEIO * pIO, void * pBuffer, int nBytes);
-intn WriteSafe(IAPEIO * pIO, void * pBuffer, intn nBytes);
 
 /**************************************************************************************************
 Checks for the existence of a file
@@ -93,5 +92,10 @@ inline uint64 Switch8Bytes(uint64 nValue)
     #define ConvertU32LE(val) (val)
     #define ConvertU64LE(val) (val)
 #endif
+
+/**************************************************************************************************
+Get the number of threads from the specified number (handles automatic)
+**************************************************************************************************/
+int GetNumberThreads(int nThreads);
 
 }

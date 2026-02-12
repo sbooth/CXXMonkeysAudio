@@ -5,8 +5,6 @@
 #include "BufferIO.h"
 #include "MACLib.h"
 #include "GlobalFunctions.h"
-#include "FloatTransform.h"
-#include "CharacterHelper.h"
 #include "WholeFileIO.h"
 
 namespace APE
@@ -70,7 +68,7 @@ CInputSource * CInputSource::CreateInputSource(const str_utfn * pSourceName, WAV
         spIO.SetDelete(false);
         if (pAIFF->GetIsBigEndian())
             *pFlags |= APE_FORMAT_FLAG_BIG_ENDIAN;
-        if (pwfeSource->wBitsPerSample == 8)
+        if ((pwfeSource->wBitsPerSample == 8) && pAIFF->GetIsSigned8Bit())
             *pFlags |= APE_FORMAT_FLAG_SIGNED_8_BIT;
         if (pwfeSource->wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
             *pFlags |= APE_FORMAT_FLAG_FLOATING_POINT;
@@ -667,6 +665,7 @@ CAIFFInputSource::CAIFFInputSource(IAPEIO * pIO, WAVEFORMATEX * pwfeSource, int6
     m_nTerminatingBytes = 0;
     m_bLittleEndian = false;
     m_bFloat = false;
+    m_bSigned8Bit = true;
     m_pTag = pTag;
 
     if (pIO == APE_NULL || pwfeSource == APE_NULL)
@@ -807,9 +806,18 @@ int CAIFFInputSource::AnalyzeSource()
                     {
                         // this means we're a supported file
                     }
+                    else if (memcmp(spBuffer, "twos", 4) == 0)
+                    {
+                        // this is the reverse of sowt so the endian is flipped
+                        m_bLittleEndian = false;
+                    }
                     else if (memcmp(spBuffer, "sowt", 4) == 0)
                     {
                         m_bLittleEndian = true;
+                    }
+                    else if (memcmp(spBuffer, "raw ", 4) == 0)
+                    {
+                        m_bSigned8Bit = false;
                     }
                     else if ((memcmp(spBuffer, "fl32", 4) == 0) || (memcmp(spBuffer, "FL32", 4) == 0))
                     {
@@ -906,7 +914,10 @@ int CAIFFInputSource::GetData(unsigned char * pBuffer, int nBlocks, int * pBlock
         return ERROR_IO_READ;
 
     if (m_wfeSource.wBitsPerSample == 8)
-        Convert8BitSignedToUnsigned(pBuffer, m_wfeSource.nChannels, nBlocks);
+    {
+        if (m_bSigned8Bit)
+            Convert8BitSignedToUnsigned(pBuffer, m_wfeSource.nChannels, nBlocks);
+    }
 #if APE_BYTE_ORDER == APE_LITTLE_ENDIAN
     else if (!m_bLittleEndian)
         SwitchBufferBytes(pBuffer, m_wfeSource.wBitsPerSample / 8, nBlocks * m_wfeSource.nChannels);
@@ -947,6 +958,11 @@ double CAIFFInputSource::GetExtendedDouble(uint16_t exponent, uint64_t mantissa)
 bool CAIFFInputSource::GetIsBigEndian() const
 {
     return !m_bLittleEndian;
+}
+
+bool CAIFFInputSource::GetIsSigned8Bit() const
+{
+    return m_bSigned8Bit;
 }
 
 /**************************************************************************************************

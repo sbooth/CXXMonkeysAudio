@@ -3,7 +3,9 @@
 #ifdef IO_USE_WIN_FILE_IO
 
 #include "WinFileIO.h"
+#ifndef _UNICODE
 #include "CharacterHelper.h"
+#endif
 
 namespace APE
 {
@@ -106,41 +108,43 @@ int CWinFileIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * p
 {
     bool bRetVal = true;
 
-    *pBytesRead = 0; // reset
-
     unsigned int nTotalBytesRead = 0;
     unsigned int nBytesLeft = nBytesToRead;
     unsigned char * pucBuffer = static_cast<unsigned char *>(pBuffer);
 
-    *pBytesRead = 1;
-    while ((nBytesLeft > 0) && (*pBytesRead > 0) && bRetVal)
+    // loop and read until we read all the data or have a failure
+    while ((nBytesLeft > 0) && bRetVal)
     {
         unsigned long nBytesRead = 0;
         bRetVal = ::ReadFile(m_hFile, &pucBuffer[nBytesToRead - nBytesLeft], nBytesLeft, &nBytesRead, APE_NULL) ? true : false;
-        *pBytesRead = nBytesRead;
-        if (bRetVal && (*pBytesRead <= 0))
+        if (bRetVal && (nBytesRead <= 0))
             bRetVal = false;
 
         if (bRetVal)
         {
-            nBytesLeft -= *pBytesRead;
-            nTotalBytesRead += *pBytesRead;
+            nBytesLeft -= nBytesRead;
+            nTotalBytesRead += nBytesRead;
         }
     }
 
-    *pBytesRead = nTotalBytesRead;
-
     // succeed if we actually read data then fail next call
-    if ((bRetVal == false) && (*pBytesRead > 0))
+    if ((bRetVal == false) && (nTotalBytesRead > 0))
         bRetVal = true;
+
+    // update the bytes read
+    if (pBytesRead != APE_NULL)
+        *pBytesRead = nTotalBytesRead;
 
     return bRetVal ? ERROR_SUCCESS : ERROR_IO_READ;
 }
 
 int CWinFileIO::Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten)
 {
-    const bool bRetVal = WriteFile(m_hFile, pBuffer, nBytesToWrite, reinterpret_cast<unsigned long *>(pBytesWritten), APE_NULL) ? true : false;
-    if ((bRetVal == 0) || (*pBytesWritten != nBytesToWrite))
+    unsigned long nBytesWritten = 0;
+    const bool bRetVal = WriteFile(m_hFile, pBuffer, nBytesToWrite, &nBytesWritten, APE_NULL) ? true : false;
+    if (pBytesWritten != APE_NULL)
+        *pBytesWritten = static_cast<unsigned int>(nBytesWritten);
+    if ((bRetVal == 0) || (nBytesWritten != nBytesToWrite))
         return ERROR_IO_WRITE;
     else
         return ERROR_SUCCESS;

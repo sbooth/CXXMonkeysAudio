@@ -330,7 +330,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
                 }
                 else
                 {
-                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&wfeFormat), 0);
                     RF64_HEADER WAVHeader; FillRF64Header(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat);
                     memcpy(pBuffer, &WAVHeader, sizeof(RF64_HEADER));
                     nResult = ERROR_SUCCESS;
@@ -345,7 +345,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
                 }
                 else
                 {
-                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&wfeFormat), 0);
                     WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader, static_cast<int64>(m_APEFileInfo.nWAVDataBytes), &wfeFormat,
                         static_cast<intn>(m_APEFileInfo.nWAVTerminatingBytes));
                     memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));
@@ -404,7 +404,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
         break;
     }
     case IAPEDecompress::APE_INFO_IO_SOURCE:
-        nResult = POINTER_TO_INT64(m_spIO.GetPtr());
+        nResult = APE_POINTER_TO_INT64(m_spIO.GetPtr());
         break;
     case IAPEDecompress::APE_INFO_FRAME_BYTES:
     {
@@ -452,7 +452,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
         break;
     }
     case IAPEDecompress::APE_INFO_TAG:
-        nResult = POINTER_TO_INT64(static_cast<IAPETag *>(m_spAPETag.GetPtr()));
+        nResult = APE_POINTER_TO_INT64(static_cast<IAPETag *>(m_spAPETag.GetPtr()));
         break;
     case IAPEDecompress::APE_INFO_APL:
         nResult = static_cast<int64>(m_bAPL);
@@ -475,7 +475,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
         }
         break;
     case IAPEDecompress::APE_INTERNAL_INFO:
-        nResult = POINTER_TO_INT64(&m_APEFileInfo);
+        nResult = APE_POINTER_TO_INT64(&m_APEFileInfo);
         break;
     case IAPEDecompress::APE_DECOMPRESS_CURRENT_BLOCK:
     case IAPEDecompress::APE_DECOMPRESS_CURRENT_MS:

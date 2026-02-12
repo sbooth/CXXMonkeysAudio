@@ -108,6 +108,9 @@ public:
     // endian
     bool GetIsBigEndian() const;
 
+    // signed
+    bool GetIsSigned8Bit() const;
+
     // get other properties
     bool GetFloat() APE_OVERRIDE { return m_bFloat; }
 
@@ -127,6 +130,7 @@ private:
     bool m_bIsValid;
     bool m_bLittleEndian;
     bool m_bFloat;
+    bool m_bSigned8Bit;
 };
 
 /**************************************************************************************************

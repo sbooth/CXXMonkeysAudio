@@ -63,7 +63,7 @@ int CUnMACOld::Initialize(IAPEDecompress * pAPEDecompress)
     m_bInitialized = true;
 
     // get the format
-    m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&m_wfeInput));
+    m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&m_wfeInput));
 
     // return a successful value
     return ERROR_SUCCESS;
@@ -191,7 +191,7 @@ intn CUnMACOld::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex
     {
         m_spAPEDecompressCore->GenerateDecodedArrays(nBlocks, static_cast<intn>(nSpecialCodes), static_cast<intn>(FrameIndex));
 
-        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
+        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&WaveFormatEx));
         m_spPrepare->UnprepareOld(m_spAPEDecompressCore->GetDataX(), m_spAPEDecompressCore->GetDataY(), nBlocks, &WaveFormatEx,
             pOutputData, static_cast<unsigned int *>(&CRC), static_cast<int>(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     }
@@ -199,7 +199,7 @@ intn CUnMACOld::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex
     {
         m_spAPEDecompressCore->GenerateDecodedArrays(nBlocks, static_cast<intn>(nSpecialCodes), static_cast<intn>(FrameIndex));
 
-        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&WaveFormatEx));
+        WAVEFORMATEX WaveFormatEx; m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&WaveFormatEx));
         m_spPrepare->UnprepareOld(m_spAPEDecompressCore->GetDataX(), APE_NULL, nBlocks, &WaveFormatEx,
             pOutputData, static_cast<unsigned int *>(&CRC), static_cast<int>(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     }

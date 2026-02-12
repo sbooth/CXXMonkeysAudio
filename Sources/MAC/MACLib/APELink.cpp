@@ -22,12 +22,16 @@ CAPELink::CAPELink(const str_utfn * pFilename)
     CSmartPtr<IAPEIO> spioLinkFile(CreateIAPEIO());
     if (spioLinkFile->Open(pFilename) == ERROR_SUCCESS)
     {
+        // get file size and cap at a size plenty big to read all the data at the front (the tag follows which could be big)
+        int64 nFileSize = spioLinkFile->GetSize();
+        unsigned int nReadSize = (nFileSize > 4096) ? 4096 : static_cast<unsigned int>(nFileSize);
+
         // create a buffer
-        CSmartPtr<char> spBuffer(new char [1024], true);
+        CSmartPtr<char> spBuffer(new char [nReadSize + 1], true);
 
         // fill the buffer from the file and null terminate it
         unsigned int nBytesRead = 0;
-        spioLinkFile->Read(spBuffer.GetPtr(), 1023, &nBytesRead);
+        spioLinkFile->Read(spBuffer.GetPtr(), nReadSize, &nBytesRead);
         spBuffer[nBytesRead] = 0;
 
         // call the other constructor (uses a buffer instead of opening the file)
@@ -101,12 +105,12 @@ void CAPELink::ParseData(const char * pData, const str_utfn * pFilename)
     }
 }
 
-int CAPELink::GetStartBlock()
+int CAPELink::GetStartBlock() const
 {
     return m_nStartBlock;
 }
 
-int CAPELink::GetFinishBlock()
+int CAPELink::GetFinishBlock() const
 {
     return m_nFinishBlock;
 }
@@ -116,7 +120,7 @@ const str_utfn * CAPELink::GetImageFilename()
     return m_cImageFilename;
 }
 
-bool CAPELink::GetIsLinkFile()
+bool CAPELink::GetIsLinkFile() const
 {
     return m_bIsLinkFile;
 }

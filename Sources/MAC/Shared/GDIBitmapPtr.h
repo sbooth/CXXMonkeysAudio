@@ -40,11 +40,13 @@ public:
     {
         if (m_pBitmap != APE_NULL)
         {
-            // this will cause Clang to lose it (2/5/2025)
-            //delete m_pBitmap;
-
-            // this is fine
-            Gdiplus::Bitmap::operator delete(m_pBitmap);
+            #if _MSC_VER >= 1950
+                // Visual Studio 2026 just allows a regular delete
+                delete m_pBitmap;
+            #else
+                // Visaul Studio 2022 requires this or else Clang loses it and warns about the delete
+                Gdiplus::Bitmap::operator delete(m_pBitmap);
+            #endif
 
             // reset pointer
             m_pBitmap = APE_NULL;

@@ -1,7 +1,6 @@
 #include "All.h"
 #include "NewPredictor.h"
 #include "MACLib.h"
-#include "GlobalFunctions.h"
 
 namespace APE
 {

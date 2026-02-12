@@ -1,8 +1,5 @@
 #pragma once
 
-#include "IAPEIO.h"
-#include "APEInfo.h"
-
 namespace APE
 {
 
@@ -13,9 +10,9 @@ public:
     CAPELink(const char * pData, const str_utfn * pFilename);
     virtual ~CAPELink();
 
-    bool GetIsLinkFile();
-    int GetStartBlock();
-    int GetFinishBlock();
+    int GetStartBlock() const;
+    int GetFinishBlock() const;
+    bool GetIsLinkFile() const;
     const str_utfn * GetImageFilename();
 
 protected:

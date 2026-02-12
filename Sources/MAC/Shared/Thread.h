@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef PLATFORM_WINDOWS
-#   include <windows.h>
-#   include <winnt.h>
+#include <windows.h>
+#include <winnt.h>
 #else
-#   include <pthread.h>
+#include <pthread.h>
 #endif
 
 namespace APE
