@@ -60,7 +60,7 @@ CAPEDecompress::~CAPEDecompress()
 
 int CAPEDecompress::SetNumberOfThreads(int nThreads)
 {
-    m_nThreads = APE_CAP(nThreads, 1, 32);
+    m_nThreads = GetNumberThreads(nThreads);
     return m_nThreads;
 }
 
@@ -395,7 +395,7 @@ int64 CAPEDecompress::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64
             else
             {
                 WAVEFORMATEX wfeFormat;
-                GetInfo(APE_INFO_WAVEFORMATEX, POINTER_TO_INT64(&wfeFormat), 0);
+                GetInfo(APE_INFO_WAVEFORMATEX, APE_POINTER_TO_INT64(&wfeFormat), 0);
                 WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader,
                     (m_nFinishBlock - m_nStartBlock) * GetInfo(APE_INFO_BLOCK_ALIGN),
                     &wfeFormat, 0);

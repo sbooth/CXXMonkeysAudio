@@ -1,7 +1,9 @@
 #include "All.h"
 #include "CircleBuffer.h"
 #include "CRC.h"
-#include "GlobalFunctions.h"
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
+    #include "GlobalFunctions.h"
+#endif
 
 namespace APE
 {

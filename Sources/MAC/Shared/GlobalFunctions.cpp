@@ -1,7 +1,12 @@
 #include "All.h"
 #include "GlobalFunctions.h"
 #include "IAPEIO.h"
-#include "CharacterHelper.h"
+#if __cplusplus >= 201103L
+    #include <thread>
+#endif
+#if !defined(PLATFORM_WINDOWS) || !defined(UNICODE)
+    #include "CharacterHelper.h"
+#endif
 
 #ifdef PLATFORM_APPLE
     #include <AvailabilityMacros.h>
@@ -22,19 +27,6 @@ int ReadSafe(IAPEIO * pIO, void * pBuffer, int nBytes)
     {
         if (nBytes != static_cast<int>(nBytesRead))
             nResult = ERROR_IO_READ;
-    }
-
-    return nResult;
-}
-
-intn WriteSafe(IAPEIO * pIO, void * pBuffer, intn nBytes)
-{
-    unsigned int nBytesWritten = 0;
-    intn nResult = pIO->Write(pBuffer, static_cast<unsigned int>(nBytes), &nBytesWritten);
-    if (nResult == ERROR_SUCCESS)
-    {
-        if (nBytes != static_cast<int>(nBytesWritten))
-            nResult = ERROR_IO_WRITE;
     }
 
     return nResult;
@@ -164,6 +156,20 @@ void SwitchBufferBytes(void * pBuffer, int nBytesPerBlock, int nBlocks)
         for (int i = 0; i < nBlocks; i++)
             pLongBuffer[i] = Switch4Bytes(pLongBuffer[i]);
     }
+}
+
+int GetNumberThreads(int nThreads)
+{
+    if (nThreads == APE_THREADS_AUTOMATIC)
+    {
+        #if __cplusplus >= 201103L
+            nThreads = APE_MAX(1, static_cast<int>(std::thread::hardware_concurrency()) / 2);
+        #else
+            nThreads = 1;
+        #endif
+    }
+    nThreads = APE_CAP(nThreads, 1, 32);
+    return nThreads;
 }
 
 }

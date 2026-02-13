@@ -23,14 +23,14 @@ CWholeFileIO * CreateWholeFileIO(IAPEIO * pSource, int64 nSize)
         // simply read until we're at the EOF
         // we read in 64MB chunks, and grow by 64MB and after the final read there's a little extra at the end that's just filled with garbage and not used by the CWholeFileIO object
         int64 nBytes = 0;
-        
+
         // keeping this constant was tested by a user and performed the best
         // these were his results encoding a single big file from a pipe:
         // 2x : 45.5s (nGrowBytes *= 2)
         // 1m : 68.2s
         // 16m : 22.6s
         // 64m : 21.8s
-        const int64 nGrowBytes = 64 * APE_BYTES_IN_MEGABYTE; 
+        const int64 nGrowBytes = 64 * APE_BYTES_IN_MEGABYTE;
 
         // allocate the first buffer then start the read loop
         unsigned char * pBuffer = new unsigned char [static_cast<size_t>(nGrowBytes)];

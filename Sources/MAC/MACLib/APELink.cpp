@@ -23,11 +23,11 @@ CAPELink::CAPELink(const str_utfn * pFilename)
     if (spioLinkFile->Open(pFilename) == ERROR_SUCCESS)
     {
         // create a buffer
-        CSmartPtr<char> spBuffer(new char [1024], true);
+        CSmartPtr<char> spBuffer(new char [4097], true);
 
-        // fill the buffer from the file and null terminate it
+        // fill the buffer from the file and null terminate it (this might read less if the file is shorter, but that's fine)
         unsigned int nBytesRead = 0;
-        spioLinkFile->Read(spBuffer.GetPtr(), 1023, &nBytesRead);
+        spioLinkFile->Read(spBuffer.GetPtr(), 4096, &nBytesRead);
         spBuffer[nBytesRead] = 0;
 
         // call the other constructor (uses a buffer instead of opening the file)
@@ -101,12 +101,12 @@ void CAPELink::ParseData(const char * pData, const str_utfn * pFilename)
     }
 }
 
-int CAPELink::GetStartBlock()
+int CAPELink::GetStartBlock() const
 {
     return m_nStartBlock;
 }
 
-int CAPELink::GetFinishBlock()
+int CAPELink::GetFinishBlock() const
 {
     return m_nFinishBlock;
 }
@@ -116,7 +116,7 @@ const str_utfn * CAPELink::GetImageFilename()
     return m_cImageFilename;
 }
 
-bool CAPELink::GetIsLinkFile()
+bool CAPELink::GetIsLinkFile() const
 {
     return m_bIsLinkFile;
 }

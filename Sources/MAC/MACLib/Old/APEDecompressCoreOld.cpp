@@ -4,7 +4,6 @@
 #include "UnMACOld.h"
 #include "APEDecompressCoreOld.h"
 #include "APEInfo.h"
-#include "GlobalFunctions.h"
 #include "AntiPredictorOld.h"
 #include "Prepare.h"
 

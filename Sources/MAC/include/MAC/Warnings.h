@@ -23,5 +23,6 @@ Warnings
 #pragma clang diagnostic ignored "-Wexit-time-destructors" // this shows for global variables which are needed sometimes
 #pragma clang diagnostic ignored "-Wglobal-constructors" // some variables like the application object need to be global
 #pragma clang diagnostic ignored "-Wpragma-once-outside-header" // this fires on a couple files for no reason that I can figure
+#pragma clang diagnostic ignored "-Wpragma-pack" // this shows when browsing files in the solution for some reason with VS2026
 
 #endif // _MSC_VER

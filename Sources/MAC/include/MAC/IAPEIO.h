@@ -22,7 +22,7 @@ public:
 
     // read / write
     virtual int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead) = 0;
-    virtual int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten) = 0;
+    virtual int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten = APE_NULL) = 0;
 
     // seek
     virtual int Seek(int64 nPosition, SeekMethod nMethod) = 0;

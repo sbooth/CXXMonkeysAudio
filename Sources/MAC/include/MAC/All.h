@@ -90,24 +90,29 @@ Version
 // year in the copyright strings
 #define APE_YEAR 2026
 
-// build the version string
+// used to make strings from numbers
 #define STRINGIZE2(s) #s
 #define STRINGIZE(s) STRINGIZE2(s)
-#define APE_VER_FILE_VERSION_STR                        STRINGIZE(APE_VERSION_MAJOR) _T(".") STRINGIZE(APE_VERSION_REVISION)
-#define APE_VER_FILE_VERSION_STR_NARROW                 STRINGIZE(APE_VERSION_MAJOR) "." STRINGIZE(APE_VERSION_REVISION)
-#define APE_VER_FILE_VERSION_STR_WIDE                   STRINGIZE(APE_VERSION_MAJOR) L"." STRINGIZE(APE_VERSION_REVISION)
 
+#define WIDEN_(s) L##s
+#define WIDEN(s) WIDEN_(s)
+#define STRINGIZE_WIDE(s) WIDEN(STRINGIZE(s))
+
+// build the version strings
+#define APE_VER_FILE_VERSION_STR                        STRINGIZE(APE_VERSION_MAJOR) "." STRINGIZE(APE_VERSION_REVISION)
+#define APE_VER_FILE_VERSION_STR_WIDE                   STRINGIZE_WIDE(APE_VERSION_MAJOR) L"." STRINGIZE_WIDE(APE_VERSION_REVISION)
 #define APE_FILE_VERSION_NUMBER                         3990
-#define APE_VERSION_STRING                              APE_VER_FILE_VERSION_STR
 #define APE_VERSION_NUMBER                              APE_VERSION_MAJOR APE_VERSION_REVISION
-#define APE_NAME                                        _T("Monkey's Audio ") APE_VER_FILE_VERSION_STR
-#define PLUGIN_NAME                                     "Monkey's Audio Player " APE_VER_FILE_VERSION_STR_NARROW
-#define MJ_PLUGIN_NAME                                  _T("APE Plugin (v") APE_VER_FILE_VERSION_STR _T(")")
+
+// names and copyrights
+#define APE_NAME                                        L"Monkey's Audio " APE_VER_FILE_VERSION_STR_WIDE
+#define APE_WINAMP_PLUGIN_NAME                          "Monkey's Audio Player " APE_VER_FILE_VERSION_STR
+#define APE_MC_PLUGIN_NAME                              L"APE Plugin (v" APE_VER_FILE_VERSION_STR_WIDE L")"
 #define APE_RESOURCE_VERSION_COMMA                      APE_VERSION_MAJOR, APE_VERSION_REVISION, 0, 0
 #define APE_RESOURCE_VERSION_STRING                     APE_VER_FILE_VERSION_STR
-#define APE_RESOURCE_COPYRIGHT                          "Copyright (c) 2000-" STRINGIZE(APE_YEAR) " Matthew T. Ashland"
-#define CONSOLE_NAME                                    L"--- Monkey's Audio Console Front End (v " APE_VER_FILE_VERSION_STR_WIDE L") (c) Matthew T. Ashland ---\n"
-#define PLUGIN_ABOUT                                    _T("Monkey's Audio Player v") APE_VER_FILE_VERSION_STR _T("\nCopyrighted (c) 2000-") STRINGIZE(APE_YEAR) _T(" by Matthew T. Ashland")
+#define APE_RESOURCE_COPYRIGHT                          L"Copyright 2000-" STRINGIZE_WIDE(APE_YEAR) L" Matthew T. Ashland"
+#define CONSOLE_NAME                                    L"--- Monkey's Audio Console Front End (v " APE_VER_FILE_VERSION_STR_WIDE L") " APE_RESOURCE_COPYRIGHT L" ---\n"
+#define PLUGIN_ABOUT                                    L"Monkey's Audio Player v" APE_VER_FILE_VERSION_STR_WIDE L"\n" APE_RESOURCE_COPYRIGHT
 
 /**************************************************************************************************
 Global compiler settings (useful for porting)
@@ -157,6 +162,11 @@ Smart pointer
 /**************************************************************************************************
 Global macros
 **************************************************************************************************/
+
+// use to set the thread count automatically using the system hardware
+#define APE_THREADS_AUTOMATIC -1
+
+// formats
 #define WAVE_FORMAT_PCM 1
 #define WAVE_FORMAT_IEEE_FLOAT 0x0003
 #define WAVE_FORMAT_EXTENSIBLE 0xFFFE
@@ -172,8 +182,10 @@ Global macros
 // undefined file size (pipe, etc.)
 #define APE_FILE_SIZE_UNDEFINED -1
 
-#define POINTER_TO_INT64(POINTER) static_cast<APE::int64>(reinterpret_cast<uintptr_t>(POINTER))
+// make a pointer into an int64
+#define APE_POINTER_TO_INT64(POINTER) static_cast<APE::int64>(reinterpret_cast<uintptr_t>(POINTER))
 
+// platform defines
 #if defined(PLATFORM_WINDOWS)
     #define IO_USE_WIN_FILE_IO
     #define DLLEXPORT                                   __declspec(dllexport)
@@ -202,13 +214,11 @@ Global macros
         #define wcscat_s(A, B, C) wcscat(A, C)
         #define strcpy_s(A, B, C) strcpy(A, C)
 
-        #undef _tcsncpy_s
-        #undef _tcscpy_s
         #undef _stprintf_s
-
-        #define _tcsncpy_s(A, B, C, D) _tcsncpy(A, C, D)
-        #define _tcscpy_s(A, B, C) _tcscpy(A, C)
         #define _stprintf_s(A, B, C, ...) _stprintf(A, C, __VA_ARGS__)
+
+        #undef swprintf_s
+        #define swprintf_s(A, B, C, ...) swprintf(A, C, __VA_ARGS__)
     #endif
 #else
     #define IO_USE_STD_LIB_FILE_IO

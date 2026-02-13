@@ -4,9 +4,9 @@
 
 #include "APECompress.h"
 #include "APECompressCreate.h"
-#include "APECompressCore.h"
 #include "WAVInputSource.h"
 #include "FloatTransform.h"
+#include "GlobalFunctions.h"
 
 namespace APE
 {
@@ -30,7 +30,7 @@ CAPECompress::~CAPECompress()
 
 int CAPECompress::SetNumberOfThreads(int nThreads)
 {
-    m_nThreads = APE_CAP(nThreads, 1, 32);
+    m_nThreads = GetNumberThreads(nThreads);
     return m_nThreads;
 }
 
@@ -192,7 +192,7 @@ int CAPECompress::ProcessBuffer(bool bFinalize)
 
             // encode
             const int nResult = m_spAPECompressCreate->EncodeFrame(&m_spBuffer[m_nBufferHead], static_cast<int>(nFrameBytes));
-            if (nResult != 0) { return nResult; }
+            if (nResult != ERROR_SUCCESS) { return nResult; }
 
             m_nBufferHead += nFrameBytes;
         }

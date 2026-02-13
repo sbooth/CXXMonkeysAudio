@@ -6,7 +6,7 @@ inline CString FormatDuration(double dSeconds, bool bAddDecimal = false)
 {
     if (std::isinf(dSeconds))
     {
-        return _T("Unknown time");
+        return _T("? time");
     }
 
     int nHours = static_cast<int>(dSeconds) / 3600;

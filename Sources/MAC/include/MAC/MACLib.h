@@ -198,7 +198,7 @@ APE_HEADER structure (describes the format, duration, etc. of the APE file)
 **************************************************************************************************/
 struct APE_HEADER
 {
-    uint16 nCompressionLevel;                  // the compression level (see defines I.E. COMPRESSION_LEVEL_FAST)
+    uint16 nCompressionLevel;                  // the compression level (see defines i.e. APE_COMPRESSION_LEVEL_NORMAL)
     uint16 nFormatFlags;                       // any format flags (for future use)
 
     uint32 nBlocksPerFrame;                    // the number of audio blocks in one frame
@@ -206,7 +206,7 @@ struct APE_HEADER
     uint32 nTotalFrames;                       // the total number of frames
 
     uint16 nBitsPerSample;                     // the bits per sample (typically 16)
-    uint16 nChannels;                          // the number of channels (1 or 2)
+    uint16 nChannels;                          // the number of channels (1, 2, etc. up to APE_MAXIMUM_CHANNELS)
     uint32 nSampleRate;                        // the sample rate (typically 44100)
 };
 
